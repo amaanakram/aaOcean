@@ -24,16 +24,8 @@ This repository contains the following
 * aaOcean standalong terminal/shell application
 * several helper functions that I often use
 
-*****LINUX BUILD INSTRUCTIONS*******
-Please see the wiki page at 
-https://bitbucket.org/amaanakram/aaocean/wiki/Build%20instructions
-
-MAYA & LINUX:
-To compile the Maya plugin, you will need gcc-4.2.4 which is ABI-compatible with gcc-4.1.x and
-supports OpenMP which is used by aaOcean
-
 Acknowledgements for help and bug fixes: Frederic Servant, Fabrice Macagno, Phil Stopford, Andrew Helmer,
-The Softimage XSI Community.
+The Softimage XSI Community, Renderman community
 
 LICENSE: 
 aaOcean is covered by a GNU GPL v3 license, unless another license is specifically 
