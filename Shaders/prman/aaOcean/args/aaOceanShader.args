@@ -1,0 +1,122 @@
+<!-- $Revision: #255 $, $Date: 2014/10/29 $ -->
+<!-- set your own node ID below -->
+<!-- $mayaNodeID: 548859705 $-->
+<args format="1.0">
+    <info plugin="aaOceanShader" revision="$Revision" date="$Date">
+        A Tessendorf Ocean generator. Amaan Akram. www.amaanakram.com
+    </info>
+    <page name="Ocean Parameters" open="True">
+        <param name="resolution" type="int" default="3" min="3" max="7"  input="True" widget="default" tag="int and pattern">
+            <help>"Specifies generated texture resolution. '3' generates a 128x128. '4' generates a 256x256. '7' is 2048x2048" </help>
+        </param>
+        <param name="oceanScale" type="float" default="100.0" min="0.001" max="10000.0"  input="True" widget="default" tag="float and pattern">
+            <help>Size of the ocean patch in meters. Larger values 'fit' a larger expanse of ocean into the rendered geo</help>
+        </param>
+        <param name="seed" type="int" default="1" min="1" max="20"  input="True" widget="default" tag="int and pattern">
+            <help>Seed for the random number generator. Different values produce different ocean patches</help>
+        </param>
+        <param name="currentTime" type="float" default="0.0" min="0.0" max="100.0"  input="True" widget="default" tag="float and pattern">
+            <help>"Current Scene time in Seconds. Use an expression to drive this parameter"</help>
+        </param>
+        <param name="repeatTime" type="float" default="1000.0" min="0.0" max="1000.0"  input="True" widget="default" tag="float and pattern">
+            <help>Waves loop (repeat their shape) after the specified amount of time in seconds</help>
+        </param>
+        <param name="fade" type="float" default="0.0" min="0.0" max="1.0"  input="True" widget="default" tag="float and pattern">
+            <help>"Fades (scales) the ocean vector displacement strength"</help>
+        </param>
+    </page>
+    <page name="Wave Parameters" open="True">
+        <param name="chopAmount" type="float" default="1.0" min="0.0" max="100.0"  input="True" widget="default" tag="float and pattern">
+            <help>"The sharpness of the peaks of waves are controlled by this parameter. Also affects foam values."</help>
+        </param>
+        <param name="velocity" type="float" default="10.0" min="0.0001" max="30.0"  input="True" widget="default" tag="float and pattern">
+            <help>Controls the size of the waves. Higher velocities make fewer, but bigger waves. Lower velocities make a calm ocean</help>
+        </param>
+        <param name="waveSpeed" type="float" default="1.0" min="0.0" max="50.0"  input="True" widget="default" tag="float and pattern">
+            <help>Speed multiplier for waves</help>
+        </param>
+        <param name="cutoff" type="float" default="0.0" min="0.0" max="100.0"  input="True" widget="default" tag="float and pattern">
+            <help>Defines a smoothing factor for the overall ocean surface. Cuts off (removes) waves with wavelengths smaller than the specified value</help>
+        </param>
+        <param name="waveHeight" type="float" default="1.0" min="0.0" max="100.0"  input="True" widget="default" tag="float and pattern">
+            <help>Height mulitplier for waves</help>
+        </param>
+    </page>
+    <page name="Wind Parameters" open="True">
+        <param name="windDir" type="float" default="45.0" min="0.0" max="360.0"  input="True" widget="default" tag="float and pattern">
+            <help>Direction the waves travel in</help>
+        </param>
+        <param name="damp" type="float" default="0.985f" min="0.0" max="1.0"  input="True" widget="default" tag="float and pattern">
+            <help>Bias waves travelling in the direction of the wind. Value of 0 makes waves travel in and opposite the wind direction. 1.0 makes
+            the waves travel in the wind direction only</help>
+        </param>  
+        <param name="windAlign" type="int" default="1" min="0" max="10"  input="True" widget="default" tag="int and pattern">
+            <help>Align waves perpendicular to the direction of the wind, as observed in shallow waters</help>
+        </param>
+    </page>
+    <page name="Foam Parameters" open="False">
+        <param name="raw" type="int" default="0" input="True" widget="checkbox" tag="int and pattern">
+            <help>Ouput raw eigenvalues (foam) in alpha channel without any post correction like gamma/invert etc.</help>
+        </param>
+        <param name="invertFoam" type="int" default="0" input="True" widget="checkbox" tag="int and pattern">
+            <help>Makes wave peaks appear white, instead of make wave troughs white</help>
+        </param>
+        <param name="gamma" type="float" default="1.0" min="0.0001f" max="20.0"  input="True" widget="default" tag="float and pattern">
+            <help>Gamma factor to apply to the eigenvalue output</help>
+        </param>
+        <param name="brightness" type="float" default="1.0" min="0.0001f" max="20.0"  input="True" widget="default" tag="float and pattern">
+            <help>Multiplier for the eigenvalues</help>
+        </param>
+        <param name="fMin" type="float" default="-5.0" min="-10.0" max="10.0"  input="True" widget="default" tag="float and pattern">
+            <help>fMin and fMax are used to normalize the eigenvalues, which can go into negative and positive values. 
+            See render log for typical values on a frame</help>
+        </param>
+        <param name="fMax" type="float" default="5.0" min="-10.0" max="10.0"  input="True" widget="default" tag="float and pattern">
+             <help>fMin and fMax are used to normalize the eigenvalues, which can go into negative and positive values. 
+            See render log for typical values on a frame</help>
+        </param>
+    </page>
+    <page name="File Ouput Parameters" open="False">
+        <param name="writeFile" type="int" default="0" input="True" widget="checkbox" tag="int and pattern">
+            <help>Writes out a full-float openexr vector displacement map sequence in object space</help>
+        </param>
+        <param name="outputFolder" type="string" default="\tmp" input="True" widget="default" tag="string and pattern">
+            <help>path to the folder to output images into</help>
+        </param>
+        <param name="postfix" type="string" default="\tmp" input="True" widget="default" tag="string and pattern">
+            <help>any postfix to apply to the generated file to identify it uniquely</help>
+        </param>
+        <param name="currentFrame" type="int" default="1" min="0" max="10000"  input="True" widget="default" tag="int and pattern">
+            <help>set an expression for the current frame for frame padded sequence names</help>
+        </param>
+    </page>
+    <page name="Custom UV Parameters" open="False">
+     <param name="useUVInput" type="int" default="0" input="True" widget="checkbox" tag="int and pattern">
+            <help>use custom uv coordinate input</help>
+        </param>
+        <param name="rotateUV" type="int" default="0" input="True" widget="checkbox" tag="int and pattern">
+            <help>applies a 90-degree rotation to uv coordinates. not normally needed</help>
+        </param>
+        <param name="uvCoords" type="vector" input="True" widget="default" tag="vector and pattern">
+            <help>uv coordinate input</help>
+        </param>
+        <param name="transform" type="float" detail='cantvary' input='True' isDynamicArray="1" arraySize="16" />
+    </page>
+    <page name="Advanced Parameters" open="False">
+        <param name="oceanDepth" type="float" default="1000.0" min="1.0" max="10000.0"  input="True" widget="default" tag="float and pattern">
+            <help>slows down waves as depth decreases</help>
+        </param>
+        <param name="surfaceTension" type="float" default="0.0" min="1.0" max="10000.0"  input="True" widget="default" tag="float and pattern">
+            <help>capillary waves that run on top of the ocean surface. for small-scale effects only. see original tessendorf paper for details</help>
+        </param>
+    </page>
+    <output name="outDisplacementRGB" tag="color|pattern"/>
+    <output name="outEigenvalueFloat" tag="float"/>
+    <typeTag>
+        <tag value="pattern"/>
+    </typeTag>
+    <rfmdata nodeid="$mayaNodeID"
+        classification="rendernode/RenderMan/pattern"/>
+</args>
+
+

@@ -1,0 +1,70 @@
+global proc AEaaOceanDeformerTemplate( string $nodeName )
+{
+    editorTemplate -beginScrollLayout;
+ 
+        editorTemplate -beginLayout "Ocean Parameters" -collapse 0;
+            editorTemplate -addControl "resolution";
+			
+			editorTemplate -callCustom "aaOcean_Build" "aaOcean_Update" "spectrum";
+            editorTemplate -addControl "oceanSize";
+            editorTemplate -addControl "seed";
+            editorTemplate -label "Current Time (secs)" -addControl "time";
+            editorTemplate -addControl "timeOffset (secs)";
+        editorTemplate -endLayout;
+
+        editorTemplate -beginLayout "Wave Parameters" -collapse 0;
+            editorTemplate -addControl "waveHeight";
+            editorTemplate -addControl "waveSize";
+            editorTemplate -addControl "waveSpeed";
+            editorTemplate -addControl "waveChop";
+            editorTemplate -addControl "waveSmooth";
+        editorTemplate -endLayout;
+        
+        editorTemplate -beginLayout "Wind Parameters" -collapse 0;
+            editorTemplate -addControl "waveDirection";
+            editorTemplate -addControl "waveReflection";
+            editorTemplate -addControl "waveAlign";
+        editorTemplate -endLayout;
+        
+        editorTemplate -beginLayout "Foam Parameters" -collapse 0;
+            editorTemplate -label "Do Foam (Eigen Vectors/Values)" -addControl "doFoam";
+            editorTemplate -label "Eigen Vector ColorSet Name" -addControl "eigenVectorMap";
+            editorTemplate -label "Eigen Value ColorSet Name" -addControl "eigenValueMap";
+            editorTemplate -label "Invert Eigen Values" -addControl "invertFoam";
+        editorTemplate -endLayout;
+
+        editorTemplate -beginLayout "Advanced Parameters" -collapse 1;
+            editorTemplate -addControl "oceanDepth";
+            editorTemplate -addControl "surfaceTension";
+            editorTemplate -label "Spectrum Multiplier" -addControl "spectrumMult";
+            editorTemplate -label "Peak Sharpening" -addControl "peakSharpening";
+			editorTemplate -label "Fetch Distance" -addControl "jswpFetch";
+			//editorTemplate -label "Swell" -addControl "swell";
+			editorTemplate -addControl "repeatTime";
+            editorTemplate -label "UV Map label" -addControl "uvMap";
+        editorTemplate -endLayout;
+ 
+    editorTemplate -endLayout;
+ 
+    AEdependNodeTemplate $nodeName;
+ 
+    editorTemplate -addExtraControls;
+    editorTemplate -endScrollLayout;
+}
+
+global proc aaOcean_Build(string $enumAttrName)
+{
+    attrEnumOptionMenuGrp
+        -label "Spectrum Type "
+        -attribute $enumAttrName
+        -enumeratedItem 0 "Philips"
+        -enumeratedItem 1 "Pierson-Moskowitz"
+        -enumeratedItem 2 "TMA"
+        SpectrumAttrOptionGrp;
+}
+
+global proc aaOcean_Update(string $enumAttrName)
+{
+    //Update the attrEnumOptionMenuGrp for the enumAttr
+    attrEnumOptionMenuGrp -e -attribute $enumAttrName SpectrumAttrOptionGrp;
+}

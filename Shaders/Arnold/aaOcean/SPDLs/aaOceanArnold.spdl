@@ -1,0 +1,658 @@
+SPDL
+Version = "2.0.0.0";
+Reference = "{0251E6E3-0AB6-40b9-B3C1-4E5E3F825F77}";
+PropertySet "aaOcean_params"
+{
+	Parameter "out" output
+	{
+		title = "output";
+		guid = "{F3716DC9-8F2A-43c3-B8AD-1D6BCCB50A8A}";
+		type = color;
+		flags = 0;
+	}
+
+	Parameter "uv_coords" input
+	{		
+		guid = "{E45F8E85-A58B-48a9-AC26-310B18F867D2}";
+		type = vector;
+		flags = 0;
+		texturable = on;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "use_uv_input" input
+	{
+		GUID = "{A0402B49-4660-470b-8D5A-F566ED50C13E}";
+		type = boolean;
+		flags = 0;
+		texturable = off;
+		value = 0;
+		writable = on;
+		animatable = off;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "fade" input
+	{		
+		guid = "{72D5B15B-79AE-4058-ABA6-FA1DE5651CC7}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 0.0;
+		value minimum = 0.0;
+		value maximum = 1.0;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "resolution" input
+	{		
+		guid = "{95351186-5EAC-46d0-B25D-11219824A4FB}";
+		type = integer;
+		flags = 0;
+		texturable = on;
+		value = 3;
+		value minimum = 3;
+		value maximum = 8;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "oceanScale" input
+	{		
+		guid = "{85C5C117-E4B4-4c65-ACB5-DFE63D4B0CC8}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 100;
+		value minimum = 0.001;
+		value maximum = 10000;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "oceanDepth" input
+	{		
+		guid = "{96691F20-A2D6-4A98-88B1-FAA2EED68E19}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1000;
+		value minimum = 0.0001;
+		value maximum = 10000;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "surfaceTension" input
+	{		
+		guid = "{7435E6B4-3F89-4A9C-82B8-B058D6939F6D}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 0.0;
+		value minimum = 0.0;
+		value maximum = 5.0;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "seed" input
+	{		
+		guid = "{73FFECC6-18CB-4553-94D4-00C83774F20A}";
+		type = integer;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		value minimum = 1;
+		value maximum = 20;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "waveHeight" input
+	{		
+		guid = "{2FB3EEEF-C45F-4780-A156-F1674A3F2258}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		value minimum = 0;
+		value maximum = 100;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "velocity" input
+	{		
+		guid = "{A14BE599-97DF-4d44-951D-6A91107E3D9A}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 10;
+		value minimum = 0.001;
+		value maximum = 30;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "waveSpeed" input
+	{
+		guid = "{0C028397-56EC-4ca8-8B75-DED7AB0B0888}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		value minimum = 1;
+		value maximum = 50;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "chopAmount" input
+	{		
+		guid = "{454488DB-FB42-420b-8156-D35B5DF672CB}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		value minimum = 0;
+		value maximum = 100;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "cutoff" input
+	{		
+		guid = "{5F29D58A-CD02-4b84-9BD6-49030F88AE75}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 0;
+		value minimum = 0;
+		value maximum = 100;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "windDir" input
+	{		
+		guid = "{0FA7125F-D688-459f-8300-F6C386FE178F}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 0;
+		value minimum = 0;
+		value maximum = 360;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "damp" input
+	{		
+		guid = "{231EA8C0-1D85-4c90-BA3E-62564927C029}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 0;
+		value minimum = 0;
+		value maximum = 1;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "windAlign" input
+	{		
+		guid = "{49766D28-0A33-457e-8BCE-42EB3A2E7B57}";
+		type = integer;
+		flags = 0;
+		texturable = on;
+		value = 0;
+		value minimum = 0;
+		value maximum = 10;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "time" input
+	{
+		guid = "{B8E42FA0-B2AE-433a-85F2-399A65432ECE}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "repeatTime" input
+	{
+		guid = "{D5376801-9EED-4446-82D3-2BE031C04DF1}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1000.0;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "gamma" input
+	{
+		guid = "{2BE14138-1A4D-44a8-85BB-AB7857393EAE}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		value minimum = 0.0001;
+		value maximum = 20;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "brightness" input
+	{
+		guid = "{950A06B1-4F2C-435c-8E7D-BBF8DFAA1220}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		value minimum = 0.0001;
+		value maximum = 20;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "raw" input
+	{
+		guid = "{61C8C6B2-41CA-42a4-839A-44E53A0BB71D}";
+		type = boolean;
+		flags = 0;
+		texturable = on;
+		value = 0;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "invertFoam" input
+	{
+		guid = "{6A9FF125-3BDA-4F22-8CCA-846B744713B0}";
+		type = boolean;
+		flags = 0;
+		texturable = on;
+		value = 0;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "fMin" input
+	{
+		guid = "{AF06EAB5-B595-4fe8-9274-B0F773FF5466}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = -2.0;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "fMax" input
+	{
+		guid = "{60E5BD01-1317-4ae3-A918-3A537D209D47}";
+		type = scalar;
+		flags = 0;
+		texturable = on;
+		value = 2.0;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "writeFile" input
+	{
+		GUID = "{3F88889E-A511-4f59-A3DC-ACD335CE9D3F}";
+		type = boolean;
+		flags = 0;
+		texturable = off;
+		value = 0;
+		writable = on;
+		animatable = off;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "outputFolder" input
+	{
+		GUID = "{6CCE7520-807E-43e3-8743-DF6B38ABD047}";
+		type = string;
+		flags = 1;
+		Value = "";   
+		Animatable = off;
+	}
+	Parameter "postfix" input
+	{
+		GUID = "{C6712AC4-8A40-452f-B9F7-7756F0CA779D}";
+		type = string;
+		flags = 1;
+		Value = "";   
+		Animatable = off;
+	}
+	Parameter "currentFrame" input
+	{		
+		guid = "{5C09B0B3-97BE-480d-803B-957F9978471C}";
+		type = integer;
+		flags = 0;
+		texturable = on;
+		value = 1;
+		writable = on;
+		animatable = on;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "rotateUV" input
+	{
+		GUID = "{BB9BB796-7C04-465e-B67E-F5B2438F288F}";
+		type = boolean;
+		flags = 0;
+		texturable = off;
+		value = 1;
+		writable = on;
+		animatable = off;
+		persistable = on;
+		readable = on;
+		inspectable = on;
+	}
+	Parameter "transform" input
+	{
+		GUID = "{96DA2DC5-41DA-4ABB-97B4-F3E88EE0858E}";
+		Type = Matrix;
+		Texturable = On;
+		Value = 1.0 0.0 0.0 0.0  0.0 1.0 0.0 0.0  0.0 0.0 1.0 0.0  0.0 0.0 0.0 1.0;
+	}
+}
+
+
+phenomenon "aaOcean_declare"
+{
+	Name = "aaOcean";
+	Version = 1;
+	Use = texture;
+}
+
+Defaults
+{
+	uv_coords
+	{
+		Name = "uv coords";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	use_uv_input
+	{
+		Name = "use input uv";
+	}
+	fade
+	{
+		Name = "fade";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0.0 to 1by 0.0001;
+	}
+	resolution
+	{
+		Name = "Resolution";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 3 to 8 by 1;
+		UIType = "Number";
+	}
+	oceanScale
+	{
+		Name = "Ocean Size";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0.001 to 1000 by 0.001;
+		UIType = "Number";
+	}
+	oceanDepth
+	{
+		Name = "Ocean Depth";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0.0001 to 10000 by 0.1;
+		UIType = "Number";
+	}
+	surfaceTension
+	{
+		Name = "Surface Tension";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0.0 to 5 by 0.001;
+		UIType = "Number";
+	}
+	seed
+	{
+		Name = "Seed";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 1 to 20 by 1;
+		UIType = "Number";
+	}
+	waveHeight
+	{
+		Name = "Height";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0 to 10 by 0.001;
+		UIType = "Number";
+	}
+	velocity
+	{
+		Name = "Size";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0.001 to 30 by 0.001;
+	}
+	waveSpeed
+	{
+		Name = "Speed";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0.001 to 50 by 0.001;
+	}
+	chopAmount
+	{
+		Name = "Choppiness";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0 to 50 by 0.001;
+	}
+	cutoff
+	{
+		Name = "Smooth";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0 to 50 by 0.01;
+		UIType = "Number";
+	}
+	windDir
+	{
+		Name = "Direction";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0 to 360 by 0.01;
+		UIType = "Number";
+	}
+	damp
+	{
+		Name = "Reflection";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0 to 1 by 0.01;
+		UIType = "Number";
+	}
+	windAlign
+	{
+		Name = "Wind Align";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0 to 10 by 1;
+		UIType = "Number";
+	}
+	time
+	{
+		Name = "Time (secs)";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	repeatTime
+	{
+		Name = "Repeat Time (secs)";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+		UIRange = 0.0001 to 1000 by 0.01;
+		UIType = "Number";
+	}
+	gamma
+	{
+		Name = "Gamma";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	brightness
+	{
+		Name = "Brightness";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	raw
+	{
+		Name = "Raw Output";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	invertFoam
+	{
+		Name = "Invert Foam";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	fMin
+	{
+		Name = "Foam Min";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	fMax
+	{
+		Name = "Foam Max";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	writeFile
+	{
+		Name = "Write shader data";
+		Commands = "{F5C75F11-2F05-11d3-AA95-00AA0068D2C0}";
+	}
+	outputFolder
+	{
+		Name = "Output Folder";
+	    UIAttr = disabled;
+	    UIType = "String";
+	}
+	postfix
+	{
+		Name = "Postfix";
+	    UIAttr = disabled;
+	    UIType = "String";
+	}
+	currentFrame
+	{
+		Name = "Current Frame";
+	}
+	rotateUV
+	{
+		Name = "Rotate UVs by 90 deg.";
+	}
+}
+
+Layout "Default"
+{
+	Tab	"Ocean Settings"
+	{
+		Group "Ocean Parameters"
+		{
+			resolution;
+			oceanScale;
+			oceanDepth;
+			surfaceTension;
+			seed;
+			time;
+			repeatTime;
+			use_uv_input;
+		}
+		Group "Wave Parameters"
+		{
+			waveHeight;
+			velocity;
+			waveSpeed;
+			chopAmount;
+			cutoff;
+		}
+		Group "Wind Parameters"
+		{
+			windDir;
+			damp;
+			windAlign;
+		}
+	}
+
+	Tab	"Foam Parameters"
+	{
+		raw;
+		Group "Non raw options"
+		{
+			invertFoam;
+			gamma;
+			brightness;
+			fMin;
+			fMax;
+		}
+	}
+	
+	Tab "File Output"
+	{
+		writeFile;
+		Group "File Name"
+		{
+			outputFolder;
+			postFix;
+			currentFrame;
+		}
+	}
+}
+
