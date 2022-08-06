@@ -13,6 +13,7 @@
 // https://bitbucket.org/amaanakram/aaocean
 
 #include "aaOceanSOP.h"
+#include <iostream>
 #include <SYS/SYS_Math.h>
 #include <UT/UT_DSOVersion.h>
 #include <UT/UT_Interrupt.h>
@@ -199,7 +200,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
     float now  = context.getTime();
 
     // Flag the SOP as being time dependent (i.e. cook on time changes)
-    flags().timeDep = 1;
+    flags().setTimeDep(true);
     
     // start pulling in SOP inputs and send to aaOcean 
     enableEigens = (ENABLEEIGENS() != 0);

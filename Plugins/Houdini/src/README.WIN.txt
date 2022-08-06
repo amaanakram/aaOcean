@@ -4,11 +4,10 @@
 # Launch Houdini Command Line Tools
 # run the following
 
-set MSVCDir="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC"
-cd %MSVCDir%
-vcvarsall.bat
 
 # now 'cd' to aaOceanSOP.c dir
 set HCUSTOM_CFLAGS=-fp:fast -Ox -Oy -GL -D_OPENMP -openmp
 hcustom -I ../../../externals/aaOcean/src -I ../../../externals/helpers aaOceanSOP.c
 
+
+# plugin installed to %UserProfile%\Documents\houdini<version>\dso
