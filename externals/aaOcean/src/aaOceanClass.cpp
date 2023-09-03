@@ -302,9 +302,9 @@ void aaOcean::allocateBaseArrays()
 
     m_memory = size * sizeof(int) * 2 + size * sizeof(float) * 9 + size * sizeof(kiss_fft_cpx) * 3;
 
-    m_fft_htField = (kiss_fft_cpx *)KISS_FFT_MALLOC(size * sizeof(kiss_fft_cpx));
-    m_fft_chopX = (kiss_fft_cpx *)KISS_FFT_MALLOC(size * sizeof(kiss_fft_cpx));
-    m_fft_chopZ = (kiss_fft_cpx *)KISS_FFT_MALLOC(size * sizeof(kiss_fft_cpx));
+    m_fft_htField = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
+    m_fft_chopX = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
+    m_fft_chopZ = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
 
     m_xCoord = (int*)malloc(size * sizeof(int));
     m_zCoord = (int*)malloc(size * sizeof(int));
@@ -344,9 +344,9 @@ void aaOcean::allocateFoamArrays()
     int dims[2] = { m_resolution, m_resolution };
     m_memory += size * sizeof(kiss_fft_cpx) * 3;
 
-    m_fft_jxx = (kiss_fft_cpx *)KISS_FFT_MALLOC(size * sizeof(kiss_fft_cpx));
-    m_fft_jzz = (kiss_fft_cpx *)KISS_FFT_MALLOC(size * sizeof(kiss_fft_cpx));
-    m_fft_jxz = (kiss_fft_cpx *)KISS_FFT_MALLOC(size * sizeof(kiss_fft_cpx));
+    m_fft_jxx = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
+    m_fft_jzz = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
+    m_fft_jxz = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
 
     m_out_fft_jxxX = (float*)malloc(size * sizeof(float));
     m_out_fft_jxxZ = (float*)malloc(size * sizeof(float));
@@ -456,7 +456,7 @@ void aaOcean::clearArrays()
         {
             if (m_fft_jxx)
             {
-                KISS_FFT_FREE(m_fft_jxx);
+                free(m_fft_jxx);
                 free(m_out_fft_jxxX);
                 free(m_out_fft_jxxZ);
                 free(m_planJxx);
@@ -465,7 +465,7 @@ void aaOcean::clearArrays()
             }
             if (m_fft_jzz)
             {
-                KISS_FFT_FREE(m_fft_jzz);
+                free(m_fft_jzz);
                 free(m_out_fft_jzzX);
                 free(m_out_fft_jzzZ);
                 free(m_planJzz);
@@ -474,7 +474,7 @@ void aaOcean::clearArrays()
             }
             if (m_fft_jxz)
             {
-                KISS_FFT_FREE(m_fft_jxz);
+                free(m_fft_jxz);
                 free(m_out_fft_jxz);
                 free(m_planJxz);
                 m_out_fft_jxz = 0;
@@ -484,7 +484,7 @@ void aaOcean::clearArrays()
         }
         if (m_fft_chopZ)
         {
-            KISS_FFT_FREE(m_fft_chopZ);
+            free(m_fft_chopZ);
             free(m_out_fft_chopZ);
             free(m_planChopZ);
             m_out_fft_chopZ = 0;
@@ -492,7 +492,7 @@ void aaOcean::clearArrays()
         }
         if (m_fft_chopX)
         {
-            KISS_FFT_FREE(m_fft_chopX);
+            free(m_fft_chopX);
             free(m_out_fft_chopX);
             free(m_planChopX);
             m_out_fft_chopX = 0;
@@ -500,7 +500,7 @@ void aaOcean::clearArrays()
         }
         if (m_fft_htField)
         {
-            KISS_FFT_FREE(m_fft_htField);
+            free(m_fft_htField);
             free(m_out_fft_htField);
             free(m_planHeightField);
             m_out_fft_htField = 0;
