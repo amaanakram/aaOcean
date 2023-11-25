@@ -1,11 +1,11 @@
 aaOcean is an implementation of Jerry Tessendorf's 2004 paper on Simulating Ocean Waves.
 Author: Amaan Akram 
-www.amaanakram.com
+www.linkedin.com/in/amaan
 
 **FEATURES**
+* Novel FFT spectrum sampling ensures that the resulting ocean shape is
+  only enhanced by increasing ocean resolution, and not completely changed
 * Multi-threaded via OpenMP
-* FFT spectrum sampling ensures that the resulting ocean shape is only enhanced by increasing ocean resolution, 
-and not completely changed
 * OpenEXR output for object-space vector displacement
 
 Example of work done with aaOcean:
@@ -32,5 +32,4 @@ aaOcean is covered by a GNU GPL v3 license, unless another license is specifical
 granted by Amaan Akram.
 A "New BSD" License for aaOcean can be obtained by contacting the author
 For more details on aaOcean and associated 3rd Party licenses, please see
-"license.txt" file that is part of the aaOcean repository:
-https://bitbucket.org/amaanakram/aaocean# aaOcean
+"license.txt" file 
