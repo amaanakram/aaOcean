@@ -246,8 +246,8 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
     else
     {
         // uv attribute not found
-        char msg[256];
-        sprintf(msg, "[aaOcean] Specified UV Point attribute \'%s\' not found on geometry.\
+        char msg[512];
+        snprintf(msg, sizeof(msg), "[aaOcean] Specified UV Point attribute \'%s\' not found on geometry.\
                      \nCheck if Point-type UV's exist on input geometry", UVAttribName);
         std::cout<<msg;
         std::cout.flush();

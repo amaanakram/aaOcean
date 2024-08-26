@@ -43,7 +43,7 @@ public:
     };
 
     // array for holding the current state of aaOcean object
-    char m_state[512];
+    char m_state[4096];
 
     // cleans up any left over data after ocean arrays are ready
     void clearResidualArrays();

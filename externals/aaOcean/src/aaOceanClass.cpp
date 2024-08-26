@@ -259,7 +259,7 @@ void aaOcean::input(
     }
 
     if (!m_doHoK || !m_doSetup)
-        sprintf(m_state, "[aaOcean Core] Ocean base state unchanged. Re-evaluating ocean with cached data");
+        snprintf(m_state, sizeof(m_state), "[aaOcean Core] Ocean base state unchanged. Re-evaluating ocean with cached data");
 
     // we have our inputs. start preparing ocean arrays
     prepareOcean();
@@ -284,18 +284,21 @@ void aaOcean::prepareOcean()
             allocateFoamArrays();
         evaluateJacobians();
     }
-    sprintf(m_state, "%s\n[aaOcean Core] Working memory allocated: %.2f megabytes", m_state, float(m_memory) / 1048576.f);
+    char temp_buffer[sizeof(m_state)];
+
+    snprintf(temp_buffer, sizeof(temp_buffer), "%s", m_state);
+    snprintf(m_state, sizeof(m_state), "%s\n[aaOcean Core] Working memory allocated: %.2f megabytes", temp_buffer, float(m_memory) / 1048576.f);
 }
 
 void aaOcean::allocateBaseArrays()
 {
     if (m_isAllocated)
     {
-        sprintf(m_state, "[aaOcean Core] Reallocating memory for ocean data structures for resolution %dx%d", m_resolution, m_resolution);
+        snprintf(m_state, sizeof(m_state), "[aaOcean Core] Reallocating memory for ocean data structures for resolution %dx%d", m_resolution, m_resolution);
         clearArrays();
     }
     else
-        sprintf(m_state, "[aaOcean Core] Allocating memory for ocean data structures for resolution %dx%d", m_resolution, m_resolution);
+        snprintf(m_state, sizeof(m_state), "[aaOcean Core] Allocating memory for ocean data structures for resolution %dx%d", m_resolution, m_resolution);
 
     int size = m_resolution * m_resolution;
     int dims[2] = { m_resolution, m_resolution };
@@ -443,8 +446,11 @@ void aaOcean::clearResidualArrays()
         m_memory = m_memory - (size * sizeof(float) * 9 + size * sizeof(int) * 2);
         cleared_memory = (cleared_memory - float(m_memory)) / 1048576.f;
         float working_memory = (float)m_memory / 1048576.f;
-        sprintf(m_state, "%s\n[aaOcean Core] Clearing %.2f megabytes of working memory. Current usage %.2f megabytes", \
-            m_state, cleared_memory, working_memory);
+
+        char temp_buffer[sizeof(m_state)];
+        strncpy(temp_buffer, m_state, sizeof(temp_buffer));
+        snprintf(m_state, sizeof(m_state), "%s\n[aaOcean Core] Clearing %.2f megabytes of working memory. Current usage %.2f megabytes",
+                temp_buffer, cleared_memory, working_memory);
     }
 }
 
@@ -702,7 +708,7 @@ void aaOcean::evaluateHokData()
         m_hokImag[index] = aa_INV_SQRTTWO * m_rand2[index] * m_fftSpectrum[index];
     }
 
-    sprintf(m_state, "\n[aaOcean Core] Finished initializing all ocean data");
+    snprintf(m_state, sizeof(m_state), "\n[aaOcean Core] Finished initializing all ocean data");
     m_doHoK = 0;
 }
 
