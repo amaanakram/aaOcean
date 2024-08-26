@@ -1,12 +1,18 @@
 aaOcean is an implementation of Jerry Tessendorf's 2004 paper on Simulating Ocean Waves.
 Author: Amaan Akram 
-www.linkedin.com/in/amaan
+[www.linkedin.com/in/amaan](https://www.linkedin.com/in/amaan/)
+First implemented in 2008 for Softimage XSI
 
 **FEATURES**
 * Novel FFT spectrum sampling ensures that the resulting ocean shape is
   only enhanced by increasing ocean resolution, and not completely changed
 * Multi-threaded via OpenMP
 * OpenEXR output for object-space vector displacement
+
+aaOcean uses and sightings
+- Ships with Renderman
+- Referenced in "Empirical directional wave spectra for computer graphics" by Christopher J. Horvath
+- Derivates made available by 3rd parties for Cinema 4D and Foundry's Modo
 
 Example of work done with aaOcean:
 https://vimeo.com/42087457
@@ -17,14 +23,14 @@ This repository contains the following
 * aaOcean Mental Ray shader
 * Softimage Shader Definitions for Mental Ray shaders
 * aaOcean Arnold shader
-* aaOcean Prman 19 RIS displacement shader
+* aaOcean Prman 19+ RIS displacement shader
 * aaOcean Softimage ICE deformer
 * aaOcean Maya Deformer
 * aaOcean Houdini SOP
 * aaOcean standalong terminal/shell application
 * several helper functions that I often use
 
-Acknowledgements for help and bug fixes: Frederic Servant, Fabrice Macagno, Phil Stopford, Andrew Helmer,
+Acknowledgements for help and bug fixes: Frederic Servant, Fabrice Macagno, Andrew Helmer,
 The Softimage XSI Community, Renderman community
 
 LICENSE: 
