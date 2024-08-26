@@ -10,8 +10,8 @@ First implemented in 2008 for Softimage XSI
 * OpenEXR output for object-space vector displacement
 
 aaOcean uses and sightings
-- Ships with Renderman
-- Referenced in "Empirical directional wave spectra for computer graphics" by Christopher J. Horvath
+- Ships with Renderman. https://rmanwiki-26.pixar.com/space/REN26/19661569/aaOceanPrmanShader
+- Referenced in "Empirical directional wave spectra for computer graphics" by Christopher J. Horvath https://dl.acm.org/doi/10.1145/2791261.2791267 
 - Derivates made available by 3rd parties for Cinema 4D and Foundry's Modo
 
 Example of work done with aaOcean:
