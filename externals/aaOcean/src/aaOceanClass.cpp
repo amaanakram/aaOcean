@@ -641,7 +641,7 @@ float aaOcean::swell(float omega, float kdotw, float k_mag)
 
 void aaOcean::evaluateHokData()
 {
-    float k_sq, k_mag, k_dot_w, spectrum;
+    float k_sq, k_mag, k_dot_w;
 
     const int      n = m_resolution * m_resolution;
     const float    k_mult = aa_TWOPI / m_oceanScale;
@@ -653,7 +653,7 @@ void aaOcean::evaluateHokData()
     if (m_damp > 0.0f)
         bDamp = 1;
 
-#pragma omp parallel for private( k_sq, k_mag, k_dot_w, spectrum)  
+#pragma omp parallel for private( k_sq, k_mag, k_dot_w)  
     for (int index = 0; index < n; ++index)
     {
         // build Kx and Kz working vars
