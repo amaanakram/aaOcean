@@ -182,7 +182,8 @@ private:
 
     void prepareOcean();
     void setupGrid();
-    unsigned int generateUID(const float, const float) const;
+    u_int32_t generateUID(const float, const float) const;
+    u_int32_t generateUIDHash(const float, const float) const;
     float philips(float k_sq);
     float piersonMoskowitz(float omega, float k_sq);
     float tma(float omega, int index = 0);

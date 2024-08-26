@@ -517,14 +517,14 @@ void aaOcean::clearArrays()
     clearResidualArrays();
 }
 
-unsigned int aaOcean::generateUID(const float xCoord, const float zCoord) const
+u_int32_t aaOcean::generateUID(const float xCoord, const float zCoord) const
 {
     // a very simple hash function. should probably do a better one at some point
     float angle;
     float length;
     float coordSq;
     float id_out;
-    unsigned int returnVal = 1;
+    u_int32_t returnVal = 1;
 
     if (zCoord != 0.0f && xCoord != 0.0f)
     {
@@ -540,13 +540,31 @@ unsigned int aaOcean::generateUID(const float xCoord, const float zCoord) const
         id_out = coordSq + (length * angle) + 0.5f;
 
         if (angle == 0.0f)
-            returnVal = (unsigned int)coordSq;
+            returnVal = (u_int32_t)coordSq;
         else if (zCoord <= 0.0f)
-            returnVal = (unsigned int)floor(id_out);
+            returnVal = (u_int32_t)floor(id_out);
         else
-            returnVal = INT_MAX - (unsigned int)floor(id_out);
+            returnVal = INT_MAX - (u_int32_t)floor(id_out);
     }
     return returnVal;
+}
+
+u_int32_t aaOcean::generateUIDHash(const float xCoord, const float zCoord) const
+{
+    // Return a default value for zero coordinates
+    if (xCoord == 0.0f && zCoord == 0.0f)
+        return 1;
+
+    // Use integers to calculate a simple hash
+    int ix = static_cast<int>(xCoord * 10000); // scale to avoid precision issues
+    int iz = static_cast<int>(zCoord * 10000);
+
+    // Generate a unique identifier using a simple but effective hashing technique
+    u_int32_t hash = 2166136261u;
+    hash = (hash ^ ix) * 16777619u;
+    hash = (hash ^ iz) * 16777619u;
+
+    return hash == 0 ? 1 : hash; // Ensure a non-zero return value
 }
 
 void aaOcean::setupGrid()
@@ -667,7 +685,7 @@ void aaOcean::evaluateHokData()
         m_kZ[index] = (float)m_zCoord[index] * k_mult;
         k_sq = (m_kX[index] * m_kX[index]) + (m_kZ[index] * m_kZ[index]);
         k_mag = sqrt(k_sq);
-        float k_mag_inv = 1.0f / sqrt(k_sq);
+        float k_mag_inv = 1.0f / k_mag;
 
         // build dispersion relationship with oceanDepth relationship and capillary waves
         m_omega[index] = aa_GRAVITY * k_mag * tanh(k_mag * m_oceanDepth);
