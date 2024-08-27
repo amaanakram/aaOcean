@@ -578,9 +578,11 @@ void aaOcean::setupGrid()
     const int half_n = (-n / 2) - ((n - 1) / 2);
 
     Timer timer;
+    // generate random numbers
+    dsfmt_t dsfmt;
+    #pragma omp parallel for schedule(dynamic) firstprivate(dsfmt)
     for (int i = 0; i < n; ++i)
     {
-    #pragma omp parallel for
         for (int j = 0; j < n; ++j)
         {
             unsigned int index, uID;
@@ -592,11 +594,6 @@ void aaOcean::setupGrid()
             float x = (float)m_xCoord[index];
             float z = (float)m_zCoord[index];
             uID = (unsigned int)generateUID(x, z);
-
-            // generate random numbers
-            dsfmt_t dsfmt;
-            // TODO: slowest in aaocean -- seeding a random number generator
-            // need to find a faster generator with good period
             dsfmt_init_gen_rand(&dsfmt, uID + m_seed);
 
             float g1 = (float)gaussian(dsfmt);
@@ -672,7 +669,8 @@ float aaOcean::swell(float omega, float kdotw, float k_mag)
 
 void aaOcean::evaluateHokData()
 {
-    float k_sq, k_mag, k_dot_w;
+    Timer timer;
+    
 
     const int      n = m_resolution * m_resolution;
     const float    k_mult = aa_TWOPI / m_oceanScale;
@@ -684,10 +682,10 @@ void aaOcean::evaluateHokData()
     if (m_damp > 0.0f)
         bDamp = 1;
 
-#pragma omp parallel for private( k_sq, k_mag, k_dot_w)  
+    #pragma omp parallel for 
     for (int index = 0; index < n; ++index)
     {
-        // build Kx and Kz working vars
+        float k_sq, k_mag, k_dot_w;
         m_kX[index] = (float)m_xCoord[index] * k_mult;
         m_kZ[index] = (float)m_zCoord[index] * k_mult;
         k_sq = (m_kX[index] * m_kX[index]) + (m_kZ[index] * m_kZ[index]);
@@ -734,13 +732,14 @@ void aaOcean::evaluateHokData()
     }
 
     snprintf(m_state, sizeof(m_state), "\n[aaOcean Core] Finished initializing all ocean data");
+
+    timer.printElapsed("[aaOcean Core] Evaluated HoK Data");
     m_doHoK = 0;
 }
 
 void aaOcean::evaluateHieghtField()
 {
-    int  i, j, index, index_rev;
-    float hokReal, hokImag, hokRealOpp, hokImagOpp, sinwt, coswt;
+    Timer timer;
 
     const float wt = m_waveSpeed * m_time;
     const int n = m_resolution;
@@ -748,10 +747,12 @@ void aaOcean::evaluateHieghtField()
     const int n_sq = n * n - 1;
     const float signs[2] = { 1.0f, -1.0f };
 
-#pragma omp parallel for private(index, index_rev, hokReal, hokImag, hokRealOpp, hokImagOpp, sinwt, coswt)  
-    for (index = 0; index < nn; ++index)
+    #pragma omp parallel for
+    for (size_t index = 0; index < nn; ++index)
     {
-        index_rev = n_sq - index; //tail end 
+        float hokReal, hokImag, hokRealOpp, hokImagOpp, sinwt, coswt;
+
+        size_t index_rev = n_sq - index; //tail end 
         hokReal = m_hokReal[index];
         hokImag = m_hokImag[index];
         hokRealOpp = m_hokReal[index_rev];
@@ -769,15 +770,19 @@ void aaOcean::evaluateHieghtField()
         m_fft_htField[index].r = m_hktReal[index];
         m_fft_htField[index].i = m_hktImag[index];
     }
+    
+    timer.printElapsed("[aaOcean Core] Heightfield data prepared");
 
     kiss_fftnd(m_planHeightField, m_fft_htField, m_fft_htField);
 
-    for (i = 0; i < n; ++i)
+    timer.printElapsed("[aaOcean Core] Heightfield FFT done");
+
+    for (size_t i = 0; i < n; ++i)
     {
-#pragma omp parallel for private(j)
-        for (j = 0; j < n; ++j)
+        for (size_t j = 0; j < n; ++j)
             m_out_fft_htField[(i*n) + j] = m_fft_htField[(i*n) + j].r * signs[(i + j) & 1] * m_waveHeight;
     }
+    timer.printElapsed("[aaOcean Core] Heightfield FFT copied with signs swapped");
 }
 
 void aaOcean::evaluateChopField()
