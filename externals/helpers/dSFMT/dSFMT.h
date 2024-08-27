@@ -37,7 +37,7 @@
 #endif
 #define DSFMT_DO_NOT_USE_OLD_NAMES 1
 #define HAVE_SSE2 1
-#define SFMT_MEXP 19937
+#define DSFMT_MEXP 19937
 
 #ifndef DSFMT_H
 #define DSFMT_H
