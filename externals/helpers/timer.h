@@ -3,7 +3,8 @@
 #include <iostream>
 #include <chrono>
 #include <string>
-#include <ai.h>
+#include <sstream>
+#include <iomanip>
 
 class Timer {
 public:
@@ -24,13 +25,30 @@ public:
         return elapsedMilliseconds() / 1000.0; // Convert milliseconds to seconds
     }
 
-    void printElapsed(const std::string& message = "", bool log=true) {
+    /*void printElapsed(const std::string& message = "", bool log=true) {
         auto milliseconds = elapsedMilliseconds();
         auto seconds = elapsedSeconds();
 
         if(log)
             AiMsgInfo("%s. Elapsed time: %f ms (%.2f seconds)", message.c_str(), milliseconds, seconds);
         reset();
+    }*/
+    void printElapsed(const std::string& message = "", bool log = true) 
+    {
+        auto milliseconds = elapsedMilliseconds();
+        auto seconds = elapsedSeconds();
+
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(2);
+        oss << message << ". Elapsed time: " << milliseconds << " ms (" << seconds << " seconds)";
+
+        if (log) 
+        {
+            std::cout << oss.str() << "\n";
+        }
+
+        reset();
+        //return oss.str();
     }
 
 private:
