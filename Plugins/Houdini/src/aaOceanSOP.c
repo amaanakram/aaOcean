@@ -274,7 +274,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
     // inputs validated. Begin writing ocean data to output handles
     int npts = gdp->getNumPoints();
     
-	#pragma omp parallel for 
+	//#pragma omp parallel for 
     for (int pt_offset = 0; pt_offset < npts; ++pt_offset)
     {
         UT_Vector3F pos = gdp->getPos3(pt_offset);
