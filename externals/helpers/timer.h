@@ -24,11 +24,12 @@ public:
         return elapsedMilliseconds() / 1000.0; // Convert milliseconds to seconds
     }
 
-    void printElapsed(const std::string& message = "") {
+    void printElapsed(const std::string& message = "", bool log=true) {
         auto milliseconds = elapsedMilliseconds();
         auto seconds = elapsedSeconds();
 
-        AiMsgInfo("%s. Elapsed time: %f ms (%.2f seconds)", message.c_str(), milliseconds, seconds);
+        if(log)
+            AiMsgInfo("%s. Elapsed time: %f ms (%.2f seconds)", message.c_str(), milliseconds, seconds);
         reset();
     }
 

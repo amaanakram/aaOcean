@@ -172,6 +172,9 @@ void aaOcean::input(
     if (m_resolution != resolution)
     {
         m_resolution = resolution;
+        m_max_threads = omp_get_max_threads();
+        if(m_resolution < 1024)
+            m_max_threads = 1;
         allocateBaseArrays();
     }
 
@@ -574,13 +577,13 @@ u_int32_t aaOcean::generateUIDHash(const float xCoord, const float zCoord) const
 
 void aaOcean::setupGrid()
 {
+    Timer timer;
+
     const int n = m_resolution;
     const int half_n = (-n / 2) - ((n - 1) / 2);
 
-    Timer timer;
-    // generate random numbers
     dsfmt_t dsfmt;
-    #pragma omp parallel for schedule(dynamic) firstprivate(dsfmt)
+    #pragma omp parallel for firstprivate(dsfmt) num_threads(m_max_threads)
     for (int i = 0; i < n; ++i)
     {
         for (int j = 0; j < n; ++j)
@@ -670,7 +673,6 @@ float aaOcean::swell(float omega, float kdotw, float k_mag)
 void aaOcean::evaluateHokData()
 {
     Timer timer;
-    
 
     const int      n = m_resolution * m_resolution;
     const float    k_mult = aa_TWOPI / m_oceanScale;
@@ -739,6 +741,7 @@ void aaOcean::evaluateHokData()
 
 void aaOcean::evaluateHieghtField()
 {
+
     Timer timer;
 
     const float wt = m_waveSpeed * m_time;
@@ -787,15 +790,14 @@ void aaOcean::evaluateHieghtField()
 
 void aaOcean::evaluateChopField()
 {
-    int  i, j, index;
-    float  kX, kZ, kMag;
     int n = m_resolution * m_resolution;
     const float signs[2] = { 1.0f, -1.0f };
-    float multiplier;
 
-#pragma omp parallel for private( index,  kX,  kZ, kMag)  
-    for (index = 0; index < n; ++index)
+    Timer timer;
+
+    for (size_t index = 0; index < n; ++index)
     {
+        float  kX, kZ, kMag;
         kMag = sqrt(m_kX[index] * m_kX[index] + m_kZ[index] * m_kZ[index]);
         kX = m_kX[index] / kMag;
         kZ = m_kZ[index] / kMag;
@@ -807,23 +809,19 @@ void aaOcean::evaluateChopField()
         m_fft_chopZ[index].i = -m_hktReal[index] * kZ;
     }
 
-#pragma omp parallel sections
-    {
-#pragma omp section
-        {
-            kiss_fftnd(m_planChopX, m_fft_chopX, m_fft_chopX);
-        }
-#pragma omp section
-        {
-            kiss_fftnd(m_planChopZ, m_fft_chopZ, m_fft_chopZ);
-        }
-    }
+    timer.printElapsed("[aaOcean Core] chopfield prepared");
+
+    kiss_fftnd(m_planChopX, m_fft_chopX, m_fft_chopX);
+    kiss_fftnd(m_planChopZ, m_fft_chopZ, m_fft_chopZ);
+
+    timer.printElapsed("[aaOcean Core] chopfield fft done");
 
     n = m_resolution;
-    for (i = 0; i < n; ++i)
+    for (size_t i = 0; i < n; ++i)
     {
-        #pragma omp parallel for private(multiplier, j, index)  
-        for (j = 0; j < n; ++j)
+        int index;
+        float multiplier;
+        for (size_t j = 0; j < n; ++j)
         {
             index = (i*n) + j;
             multiplier = m_chopAmount * signs[(i + j) & 1] * -1.0f;
@@ -831,18 +829,20 @@ void aaOcean::evaluateChopField()
             m_out_fft_chopZ[index] = m_fft_chopZ[index].r * multiplier;
         }
     }
+    timer.printElapsed("[aaOcean Core] chopfield copied with signs swapped");
 }
 
 void aaOcean::evaluateJacobians()
 {
-    int  i, j, index;
-    float kX, kZ, kMag, kXZ, multiplier;
     const float signs[2] = { 1.0f, -1.0f };
     int n = m_resolution * m_resolution;
 
-#pragma omp parallel for private( index, kX, kZ, kXZ, kMag) 
-    for (index = 0; index < n; ++index)
+    Timer timer;
+
+    #pragma omp parallel for
+    for (size_t index = 0; index < n; ++index)
     {
+        float kX, kZ, kMag, kXZ, multiplier;
         kMag = 1.0f / sqrt(m_kX[index] * m_kX[index] + m_kZ[index] * m_kZ[index]);
         kX = (m_kX[index] * m_kX[index]) * kMag;
         kZ = (m_kZ[index] * m_kZ[index]) * kMag;
@@ -857,28 +857,21 @@ void aaOcean::evaluateJacobians()
         m_fft_jxz[index].r = m_hktReal[index] * kXZ;
         m_fft_jxz[index].i = m_hktImag[index] * kXZ;
     }
+    timer.printElapsed("[aaOcean Core] Jacobians setup complete");
 
-#pragma omp parallel sections
-    {
-    #pragma omp section
-        {
-            kiss_fftnd(m_planJxx, m_fft_jxx, m_fft_jxx);
-        }
-    #pragma omp section
-        {
-            kiss_fftnd(m_planJzz, m_fft_jzz, m_fft_jzz);
-        }
-    #pragma omp section
-        {
-            kiss_fftnd(m_planJxz, m_fft_jxz, m_fft_jxz);
-        }
-    }
+    kiss_fftnd(m_planJxx, m_fft_jxx, m_fft_jxx);
+    kiss_fftnd(m_planJzz, m_fft_jzz, m_fft_jzz);
+    kiss_fftnd(m_planJxz, m_fft_jxz, m_fft_jxz);
+
+    timer.printElapsed("[aaOcean Core] Jacobians FFT done");
 
     n = m_resolution;
-    for (i = 0; i < n; ++i)
+    #pragma omp parallel for 
+    for (size_t i = 0; i < n; ++i)
     {
-        #pragma omp parallel for private(multiplier, j, index)  
-        for (j = 0; j < n; ++j)
+        float multiplier;
+        size_t index;
+        for (size_t j = 0; j < n; ++j)
         {
             index = (i*n) + j;
             multiplier = -m_chopAmount * signs[(i + j) & 1];
@@ -888,10 +881,13 @@ void aaOcean::evaluateJacobians()
         }
     }
 
-    float jPlus, jMinus, qPlus, qMinus, Jxx, Jzz, Jxz, temp;
-    #pragma omp parallel for private(index, jPlus, jMinus, qPlus, qMinus, Jxx, Jzz, Jxz, temp)  
-    for (index = 0; index < n*n; ++index)
+    timer.printElapsed("[aaOcean Core] Jacobians FFT copied");
+
+    #pragma omp parallel for 
+    for (size_t index = 0; index < n*n; ++index)
     {
+        float jPlus, jMinus, qPlus, qMinus, Jxx, Jzz, Jxz, temp;
+
         Jxx = m_fft_jxx[index].r;
         Jzz = m_fft_jzz[index].r;
         Jxz = m_fft_jxz[index].r;
@@ -913,16 +909,17 @@ void aaOcean::evaluateJacobians()
         //store foam back in this array for convenience
         m_out_fft_jxz[index] = ((Jxx + Jzz) - sqrt(((Jxx - Jzz) * (Jxx - Jzz)) + 4.0f * (Jxz*Jxz))) * 0.5f;
     }
+
+    timer.printElapsed("[aaOcean Core] Jacobians Foam completed");
 }
 
 void aaOcean::getFoamBounds(float& outBoundsMin, float& outBoundsMax) const
 {
     outBoundsMax = -FLT_MAX;
     outBoundsMin = FLT_MAX;
-
-    int index, n;
-    n = m_resolution * m_resolution;
-    for (index = 0; index < n; index++)
+    Timer timer;
+    const size_t n = m_resolution * m_resolution;
+    for (size_t index = 0; index < n; index++)
     {
         if (outBoundsMax < m_out_fft_jxz[index])
             outBoundsMax = m_out_fft_jxz[index];
@@ -930,18 +927,22 @@ void aaOcean::getFoamBounds(float& outBoundsMin, float& outBoundsMax) const
         if (outBoundsMin > m_out_fft_jxz[index])
             outBoundsMin = m_out_fft_jxz[index];
     }
+
+    timer.printElapsed("[aaOcean Core] Foam Bounds calculated");
 }
 
 void aaOcean::getOceanArray(float *&outArray, aaOcean::arrayType type) const
 {
     // get the pointer to the aaOcean array that we want to pull data from
-    float *arrayPointer = m_arrayPointer[type];
+    Timer timer;
 
+    float *arrayPointer = m_arrayPointer[type];
     const int arraySize = m_resolution * m_resolution;
 
-#pragma omp parallel for 
     for (int i = 0; i < arraySize; ++i)
         outArray[i] = arrayPointer[i];
+
+    timer.printElapsed("[aaOcean Core] got Ocean Arrays");
 }
 
 float aaOcean::getOceanData(float uCoord, float vCoord, aaOcean::arrayType type) const

@@ -164,6 +164,7 @@ private:
 
     // memory tracking -- needs better implementation
     int     m_memory;
+    int     m_max_threads;
 
     // kissfft arrays
     kiss_fft_cpx *m_fft_htField;
