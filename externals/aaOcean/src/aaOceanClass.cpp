@@ -168,7 +168,7 @@ void aaOcean::input(
     Timer timer;
     
     // forcing to be power of two, setting minimum resolution of 2^4
-    resolution = (int)pow(2.0f, (4 + abs(resolution)));
+    resolution = static_cast<int>(pow(2.0f, (4 + abs(resolution))));
     if (m_resolution != resolution)
     {
         m_resolution = resolution;
@@ -597,18 +597,18 @@ void aaOcean::setupGrid()
 
             m_xCoord[index] = half_n + i * 2;
             m_zCoord[index] = half_n + j * 2;
-            float x = (float)m_xCoord[index];
-            float z = (float)m_zCoord[index];
-            uID = (unsigned int)generateUID(x, z);
+            float x = static_cast<float>(m_xCoord[index]);
+            float z = static_cast<float>(m_zCoord[index]);
+            uID = static_cast<u_int32_t>(generateUID(x, z));
             dsfmt_init_gen_rand(&dsfmt, uID + m_seed);
 
-            float g1 = (float)gaussian(dsfmt);
-            float g2 = (float)gaussian(dsfmt);
+            float g1 = static_cast<float>(gaussian(dsfmt));
+            float g2 = static_cast<float>(gaussian(dsfmt));
 
             if (m_randWeight > 0.0f)
             {
-                float u1 = (float)uniform(dsfmt);
-                float u2 = (float)uniform(dsfmt);
+                float u1 = static_cast<float>(uniform(dsfmt));
+                float u2 = static_cast<float>(uniform(dsfmt));
 
                 m_rand1[index] = lerp(m_randWeight, g1, u1);
                 m_rand2[index] = lerp(m_randWeight, g2, u2);
@@ -969,10 +969,10 @@ float aaOcean::getOceanData(float uCoord, float vCoord, aaOcean::arrayType type)
         vCoord = (fabs(vCoord) >= 1e-6) ? 1.0f + vCoord : 0.0f;
 
     // use UV coordinates to work out ocean array indeces
-    u = uCoord * float(m_resolution);
-    v = vCoord * float(m_resolution);
-    x = (int)floor(u);
-    y = (int)floor(v);
+    u = uCoord * static_cast<float>(m_resolution);
+    v = vCoord * static_cast<float>(m_resolution);
+    x = static_cast<int>(floor(u));
+    y = static_cast<int>(floor(v));
     du = u - x; 
     dv = v - y; 
 
