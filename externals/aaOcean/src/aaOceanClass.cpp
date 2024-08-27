@@ -263,14 +263,17 @@ void aaOcean::input(
         m_doSetup = m_doHoK = 1;
     }
 
-    if (!m_doHoK || !m_doSetup)
+
+    if (!m_doHoK || !m_doSetup){
         snprintf(m_state, sizeof(m_state), "[aaOcean Core] Ocean base state unchanged. Re-evaluating ocean with cached data");
-
-    snprintf(m_state, sizeof(m_state), "[aaOcean Core] input processed. now proceeding with prepareOcean() at %dx%d resolution", m_resolution, m_resolution);
-    timer.printElapsed(m_state);
-
-    // we have our inputs. start preparing ocean arrays
-    prepareOcean();
+        prepareOcean();
+    }
+    else
+    {
+        prepareOcean();
+        snprintf(m_state, sizeof(m_state), "[aaOcean Core] input processed. now proceeding with prepareOcean() at %dx%d resolution", m_resolution, m_resolution);
+        timer.printElapsed(m_state, true);
+    }
 }
 
 void aaOcean::prepareOcean()
