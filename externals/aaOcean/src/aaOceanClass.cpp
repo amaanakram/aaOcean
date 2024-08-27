@@ -842,7 +842,7 @@ void aaOcean::evaluateJacobians()
     #pragma omp parallel for
     for (size_t index = 0; index < n; ++index)
     {
-        float kX, kZ, kMag, kXZ, multiplier;
+        float kX, kZ, kMag, kXZ;
         kMag = 1.0f / sqrt(m_kX[index] * m_kX[index] + m_kZ[index] * m_kZ[index]);
         kX = (m_kX[index] * m_kX[index]) * kMag;
         kZ = (m_kZ[index] * m_kZ[index]) * kMag;
