@@ -107,6 +107,7 @@ node_parameters
 
 node_update
 {
+    Timer timer;
     // retrieve ocean pointer from user-data
     aaOcean *pOcean = reinterpret_cast<aaOcean*>(AiNodeGetLocalData(node));
 
@@ -149,6 +150,7 @@ node_update
             AiMsgWarning("[aaOcean Shader] Foam Min/Max mismatch. Please set the Foam Min/Max values in foam shader to Min: %f, Max: %f", 
                         outMin, outMax);
     }
+    timer.printElapsed("[aaOcean Shader] node_update finished");
 }
 
 shader_evaluate

@@ -23,7 +23,7 @@
 #include "dSFMT/dSFMT.c"
 #include "constants.h"
 #include "functionLib.h"
-
+#include "timer.h"
 #include "aaOceanClass.h"
 
 aaOcean::aaOcean() :
@@ -165,6 +165,8 @@ void aaOcean::input(
     float jswpfetch,
     float swell)
 {
+    Timer timer;
+    
     // forcing to be power of two, setting minimum resolution of 2^4
     resolution = (int)pow(2.0f, (4 + abs(resolution)));
     if (m_resolution != resolution)
@@ -260,6 +262,9 @@ void aaOcean::input(
 
     if (!m_doHoK || !m_doSetup)
         snprintf(m_state, sizeof(m_state), "[aaOcean Core] Ocean base state unchanged. Re-evaluating ocean with cached data");
+
+    snprintf(m_state, sizeof(m_state), "[aaOcean Core] input processed. now proceeding with prepareOcean() at %dx%d resolution", m_resolution, m_resolution);
+    timer.printElapsed(m_state);
 
     // we have our inputs. start preparing ocean arrays
     prepareOcean();
@@ -572,9 +577,10 @@ void aaOcean::setupGrid()
     const int n = m_resolution;
     const int half_n = (-n / 2) - ((n - 1) / 2);
 
+    Timer timer;
     for (int i = 0; i < n; ++i)
     {
-        #pragma omp parallel for 
+    #pragma omp parallel for
         for (int j = 0; j < n; ++j)
         {
             unsigned int index, uID;
@@ -611,6 +617,7 @@ void aaOcean::setupGrid()
             }
         }
     }
+    timer.printElapsed("[aaOcean Core] Setup Grid Done");
     m_doSetup = 0;
 }
 
