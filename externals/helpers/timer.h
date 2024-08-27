@@ -5,7 +5,6 @@
 #include <string>
 #include <ai.h>
 
-
 class Timer {
 public:
     Timer() : start_time_point(std::chrono::high_resolution_clock::now()) {}
@@ -29,7 +28,7 @@ public:
         auto milliseconds = elapsedMilliseconds();
         auto seconds = elapsedSeconds();
 
-        AiMsgInfo("[aaOcean] %s. Elapsed time: %f ms (%.2f seconds)", message.c_str(), milliseconds, seconds);
+        AiMsgInfo("%s. Elapsed time: %f ms (%.2f seconds)", message.c_str(), milliseconds, seconds);
         reset();
     }
 
