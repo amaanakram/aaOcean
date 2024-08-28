@@ -956,10 +956,6 @@ float aaOcean::getOceanData(float uCoord, float vCoord, aaOcean::arrayType type)
     // get the pointer to the aaOcean array that we want to pull data from
     float *arrayPointer = m_arrayPointer[type];
 
-    // maya and softimage V axis runs along negative z axis
-    // aaOcean uses convention of V axis along positive z axis
-    vCoord = -vCoord;
-
     // begin UV coordinate wrapping to [0-1] interval
     uCoord = fmod(uCoord, 1.0f);
     vCoord = fmod(vCoord, 1.0f);
