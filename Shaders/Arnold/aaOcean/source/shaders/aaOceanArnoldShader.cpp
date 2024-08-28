@@ -98,7 +98,7 @@ node_parameters
     AiParameterBool( "rotateUV"         , 0);
     AiParameterMtx ( "transform"        , matrix44);
     AiParameterInt ( "spectrum"         , 0);
-    AiParameterFlt ( "randWeight"       , 1.0f);
+    AiParameterFlt ( "randWeight"       , 0.0f);
     AiParameterFlt ( "spectrumMult"     , 1.0f);
     AiParameterFlt ( "peakSharpening"   , 1.0f);
     AiParameterFlt ( "jswpfetch"        , 1.0f);

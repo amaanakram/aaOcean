@@ -283,8 +283,8 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
         uvTuple->get(uvAttribute, pt_offset, UV.data(), 3);
         // Houdini V coord runs in opposite direction compared to Softimage/Maya
         // Conforming with other apps to make ocean shape consistent across apps
-        float u = UV.x();
-        float v = 1.0f - (fmod(UV.y(), 1.0f));
+        const float u = UV.x();
+        const float v = UV.y(); 
         
         pos.y() += pOcean->getOceanData(u, v, aaOcean::eHEIGHTFIELD);
 
