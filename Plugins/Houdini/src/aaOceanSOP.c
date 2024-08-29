@@ -76,6 +76,8 @@ static PRM_Name names[] =
     PRM_Name("peakSharpening",   "Peak Sharpening"),
     PRM_Name("fetch",           "TMA Fetch"),
     PRM_Name("swellAmount",     "Swell Amount"),
+    PRM_Name("randWeight",      "Random Weight"),
+
 };
 
 // defining some custom ranges and defaults
@@ -101,6 +103,9 @@ static PRM_Default      waveSpeedDefault(1.0);
 static PRM_Range        loopTimeRange(PRM_RANGE_RESTRICTED, 0.001, PRM_RANGE_UI, 1000.0);
 static PRM_Default      loopTimeDefault(1000.0);
 
+static PRM_Range        randWeightRange(PRM_RANGE_RESTRICTED, 0.0, PRM_RANGE_UI, 1.f);
+static PRM_Default      randWeightDefault(0.0);
+
 static PRM_Range        spectrumRange(PRM_RANGE_RESTRICTED, 0, PRM_RANGE_RESTRICTED, 2);
 static PRM_Default      spectrumDefault(0);
 
@@ -113,7 +118,7 @@ static PRM_Default      spectrumMultDefault(1.0);
 static PRM_Range        peakSharpeningRange(PRM_RANGE_RESTRICTED, 0.001, PRM_RANGE_UI, 6.0);
 static PRM_Default      peakSharpeningDefault(1.0);
 
-static PRM_Range        fetchRange(PRM_RANGE_RESTRICTED, 0.001, PRM_RANGE_UI, 1000.0);
+static PRM_Range        fetchRange(PRM_RANGE_RESTRICTED, 0.0001, PRM_RANGE_UI, 1000.0);
 static PRM_Default      fetchDefault(20.0);
 
 static PRM_Range        swellRange(PRM_RANGE_RESTRICTED, 0.0, PRM_RANGE_UI, 1.f);
@@ -125,7 +130,7 @@ static PRM_Default	switcher[] = {
     PRM_Default(3, "Wave Params"),	    
     PRM_Default(4, "Wind Params"),	    
     PRM_Default(3, "TMA-specific Params"),
-    PRM_Default(6, "Misc"),	    
+    PRM_Default(7, "Misc"),	    
 };
 
 PRM_Template aaOceanSOP::myTemplateList[] = 
@@ -158,7 +163,7 @@ PRM_Template aaOceanSOP::myTemplateList[] =
     PRM_Template(PRM_STRING,1, &names[16], 0),                                              // UV Attribute // 16
     PRM_Template(PRM_FLT_J, 1, &names[15], &loopTimeDefault,    0, &loopTimeRange),         // loop time    // 15
     PRM_Template(PRM_FLT_J, 1, &names[18], &spectrumMultDefault, 0, &spectrumMultRange),    // spectrumMult // 18
-
+    PRM_Template(PRM_FLT_J, 1, &names[22], &randWeightDefault,   0, &randWeightRange),      // randWeight //
 
     PRM_Template(),
 };
@@ -225,7 +230,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
                     now,
                     LOOPTIME(now),
                     enableEigens,
-                    0.0f,
+                    RANDWEIGHT(now),
                     SPECTRUMMULT(now),
                     PEAKSHARPENING(now),
                     FETCH(now),

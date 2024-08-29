@@ -71,6 +71,7 @@ private:
     int     ENABLEEIGENS()          { return evalInt("enableEigens", 0, 0); }
     fpreal  TIMEOFFSET(fpreal t)    { return evalFloat("timeOffset", 0, t); }
     fpreal  LOOPTIME(fpreal t)      { return evalFloat("loopTime", 0, t); }
+    fpreal  RANDWEIGHT(fpreal t)    { return evalFloat("randWeight", 0, t); }
     fpreal  SPECTRUMMULT(fpreal t)  { return evalFloat("spectrumMult", 0, t); }
     fpreal  PEAKSHARPENING(fpreal t){ return evalFloat("peakSharpening", 0, t); }
     fpreal  FETCH(fpreal t)         { return evalFloat("fetch", 0, t); }
