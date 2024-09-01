@@ -14,6 +14,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <cmath>
 #include <stdlib.h>
 #include "dSFMT-params.h"
 #include "dSFMT-common.h"
