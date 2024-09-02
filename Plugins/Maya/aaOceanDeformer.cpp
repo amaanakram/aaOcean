@@ -1,6 +1,6 @@
 // aaOcean
 // Author: Amaan Akram 
-// www.amaanakram.com
+// https://linkedin.com/in/amaan
 //
 // LICENSE: 
 // aaOcean is free software and can be redistributed and modified under the terms of the 
@@ -10,7 +10,7 @@
 // A "New BSD" License for aaOcean can be obtained by contacting the author
 // For more details on aaOcean and associated 3rd Party licenses, please see
 // license.txt file that is part of the aaOcean repository:
-// https://bitbucket.org/amaanakram/aaocean
+// https://github.com/amaanakram/aaOcean
 
 
 #include "aaOceanDeformer.h"

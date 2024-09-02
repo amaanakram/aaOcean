@@ -1,6 +1,6 @@
 // aaOcean
 // Author: Amaan Akram 
-// www.amaanakram.com
+// https://linkedin.com/in/amaan
 //
 // LICENSE: 
 // aaOcean is free software and can be redistributed and modified under the terms of the 

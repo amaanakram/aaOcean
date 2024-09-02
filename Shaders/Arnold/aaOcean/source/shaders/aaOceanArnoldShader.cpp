@@ -1,6 +1,6 @@
 // aaOcean
 // Author: Amaan Akram 
-// www.amaanakram.com
+// https://linkedin.com/in/amaan
 // Outputs RGBA, with Vector Displacement in RGB, and foam in Alpha
 //
 // LICENSE: 
@@ -11,7 +11,7 @@
 // A "New BSD" License for aaOcean can be obtained by contacting the author
 // For more details on aaOcean and associated 3rd Party licenses, please see
 // license.txt file that is part of the aaOcean repository:
-// https://bitbucket.org/amaanakram/aaocean
+// https://github.com/amaanakram/aaOcean
 
 #include <limits>
 #include <string>
