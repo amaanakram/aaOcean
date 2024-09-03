@@ -115,51 +115,106 @@ public:
         m_randWeight = randWeight;
     }
 
-    void SetupGrid()
+    void BuildSpectrum()
     {
         Timer timer;
         const int n = m_resolution;
+        const int nn = n * n;
+        const int n_sq = n * n - 1;
+
         const int half_n = (-n / 2) - ((n - 1) / 2);
         const int half_n_plus_1 = n/2 + 1;
 
-        m_xCoord.resize(n * half_n_plus_1);
-        m_zCoord.resize(n * half_n_plus_1);
-        m_rand1.resize(n * half_n_plus_1);
-        m_rand2.resize(n * half_n_plus_1);
+        const float     k_mult = aa_TWOPI / m_oceanScale;
+        const float     windx = cos(m_windDir);
+        const float     windz = sin(m_windDir);
+        const float     omega0 = aa_TWOPI / m_loopTime;
+        const float     wt = m_waveSpeed * m_time;
+        
+        m_hokImag.resize(nn);
+        m_hokReal.resize(nn);
+        m_omega.resize(nn);
+
+        bool bDamp = 0;
+        if (m_damp > 0.0f)
+            bDamp = 1;
 
         dsfmt_t dsfmt;
-        #pragma omp parallel for firstprivate(dsfmt)
+        #pragma omp parallel for firstprivate(dsfmt, bDamp)
         for (int i = 0; i < n; ++i)
         {
+            int xCoord, zCoord;
+            unsigned int index, uID;
+            float rand1, rand2;
+            float kX, kZ, k_sq, k_mag, k_dot_w, omega, spectrum;
+            float hokReal, hokImag, hokRealOpp, hokImagOpp, sinwt, coswt;
+
             for (int j = 0; j < n; ++j)
             {
-                unsigned int index, uID;
-
                 index = (i * n) + j;
 
-                m_xCoord[index] = half_n + i * 2;
-                m_zCoord[index] = half_n + j * 2;
-                float x = static_cast<float>(m_xCoord[index]);
-                float z = static_cast<float>(m_zCoord[index]);
+                // build random numbers
+                xCoord = half_n + i * 2;
+                zCoord = half_n + j * 2;
+                float x = static_cast<float>(xCoord);
+                float z = static_cast<float>(zCoord);
                 uID = static_cast<u_int32_t>(GenerateUID(x, z));
                 dsfmt_init_gen_rand(&dsfmt, uID + m_seed);
-
-                float g1 = static_cast<float>(gaussian(dsfmt));
-                float g2 = static_cast<float>(gaussian(dsfmt));
-
+                rand1 = static_cast<float>(gaussian(dsfmt));
+                rand2 = static_cast<float>(gaussian(dsfmt));
                 if (m_randWeight > 0.0f)
                 {
                     float u1 = static_cast<float>(uniform(dsfmt));
                     float u2 = static_cast<float>(uniform(dsfmt));
+                    rand1 = lerp(m_randWeight, rand1, u1);
+                    rand2 = lerp(m_randWeight, rand2, u2);
+                }
 
-                    m_rand1[index] = lerp(m_randWeight, g1, u1);
-                    m_rand2[index] = lerp(m_randWeight, g2, u2);
-                }
-                else
+                // build spectrum
+                kX = static_cast<float>(xCoord) * k_mult;
+                kZ = static_cast<float>(zCoord) * k_mult;
+                k_sq = kX *kX + kZ * kZ;
+                k_mag = sqrtf(k_sq);
+                float k_mag_inv = 1.0f / k_mag;
+
+                // build dispersion relationship with oceanDepth relationship and capillary waves
+                omega = aa_GRAVITY * k_mag * tanhf(k_mag * m_oceanDepth);
+
+                // calculate spectrum
+                if (m_spectrum == 1) // Pierson-Moskowitz
                 {
-                    m_rand1[index] = g1;
-                    m_rand2[index] = g2;
+                    omega = sqrtf(omega);
+                    spectrum = spPiersonMoskowitz(omega, k_sq);
+
                 }
+                else if (m_spectrum == 2) //  Texel MARSEN ARSLOE (TMA) SpectruM
+                {
+                    omega = sqrtf(omega);
+                    spectrum = spTMA(omega, index);
+                }
+                else // Philips
+                { 
+                    // modifying dispersion for capillary waves
+                    omega = aa_GRAVITY * k_mag * (1.0f + k_sq * m_surfaceTension * m_surfaceTension);
+                    omega = sqrt(omega);
+                    // add time looping support with OmegaNought
+                    omega = (int(omega / omega0)) * omega0;
+
+                    spectrum = sqrtf(spPhilips(k_sq));
+                }
+
+                // spectrum-type indenpendant modifications
+                k_dot_w = (kX * k_mag_inv * windx) + (kZ * k_mag_inv * windz);
+                spectrum *= powf(k_dot_w, m_windAlign);  // bias towards wind dir
+                spectrum *= expf(-k_sq * m_cutoff);      // eliminate wavelengths smaller than cutoff
+
+                // reduce reflected waves
+                if (bDamp && (k_dot_w < 0.0f))
+                    spectrum *= (1.0f - m_damp);
+
+                m_hokReal[index] = aa_INV_SQRTTWO * rand1 * spectrum;
+                m_hokImag[index] = aa_INV_SQRTTWO * rand2 * spectrum;
+                m_omega[index] = omega;
             }
         }
         timer.printElapsed("[aaOcean Spectrum] Setup Grid Done");
@@ -278,16 +333,16 @@ private:
     float   m_jswpfetch;        // wind region
     float   m_swell;            // swell
 
-    std::vector<int>    m_xCoord;  // holds ocean grid coordinates
-    std::vector<int>    m_zCoord;  // holds ocean grid coordinates
+    //std::vector<int>    m_xCoord;  // holds ocean grid coordinates
+    //std::vector<int>    m_zCoord;  // holds ocean grid coordinates
     std::vector<float>  m_hokReal; // real component of HoK (see Tessendorf paper)
     std::vector<float>  m_hokImag; // imaginary component of HoK (see Tessendorf paper)
     std::vector<float>  m_hktReal; // real component of HkT (see Tessendorf paper)
     std::vector<float>  m_hktImag; // real component of HkT (see Tessendorf paper)
-    std::vector<float>  m_kX;      // x-component of wave vector
-    std::vector<float>  m_kZ;      // z-component of wave vector
     std::vector<float>  m_omega;   // omega (see Tessendorf paper)
-    std::vector<float>  m_rand1;   // random number array 
-    std::vector<float>  m_rand2;   // random number array 
+    //std::vector<float>  m_kX;      // x-component of wave vector
+    //std::vector<float>  m_kZ;      // z-component of wave vector
+    //std::vector<float>  m_rand1;   // random number array 
+    //std::vector<float>  m_rand2;   // random number array 
 };
 #endif
