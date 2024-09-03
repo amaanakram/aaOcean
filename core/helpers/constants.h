@@ -21,7 +21,7 @@
 
 static const float aa_GRAVITY       = 9.80665f;
 static const float aa_GRAVITYSQ		= aa_GRAVITY * aa_GRAVITY;
-static const float aa_EPSILON       = 0.0000001f;
+static const float aa_EPSILON       = 0.000001f;
 static const float aa_PI            = 3.14159265358979323846f;
 static const float aa_TWOPI         = aa_PI * 2.0f;
 static const float aa_PIBYTWO       = 1.57079632679489661923f;
@@ -29,7 +29,6 @@ static const float aa_180BYPI       = 57.295779513082320876798154814105f;
 static const float aa_PIBY180       = 0.01745329251994329576922222222222f;
 static const float aa_INV_PIBYTWO   = 0.63661977236758134307607071493546f;
 static const float aa_INV_SQRTTWO   = 0.70710678118654752440084436210485f;
-static const float aa_FLT_EPSILON   = 1.0e-6f;
 
 #define BOUNDARY 16 // alignment boundary
 

@@ -37,7 +37,7 @@ inline bool isfEqual(float x, float y, const float epsilon)
    return fabs(x - y) <= epsilon;  // very basic float comparator
 }
 
-bool isFlEqual(float x, float y, const float epsilon = aa_FLT_EPSILON)
+bool isFlEqual(float x, float y, const float epsilon = aa_EPSILON)
 {
     if (fabs(x - y) <= epsilon) {
         return true;
