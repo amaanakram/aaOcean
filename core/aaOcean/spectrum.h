@@ -218,6 +218,36 @@ public:
             }
         }
         timer.printElapsed("[aaOcean Spectrum] Setup Grid Done");
+
+        //allocate memory
+        m_hktImag.resize(nn);
+        m_hktReal.resize(nn);
+
+        #pragma omp parallel for
+        for (size_t index = 0; index < nn; ++index)
+        {
+            float hokReal, hokImag, hokRealOpp, hokImagOpp, sinwt, coswt;
+
+            size_t index_rev = n_sq - index; //tail end 
+            hokReal = m_hokReal[index];
+            hokImag = m_hokImag[index];
+            hokRealOpp = m_hokReal[index_rev];
+            hokImagOpp = m_hokImag[index_rev];
+
+            coswt = cos(m_omega[index] * wt);
+            sinwt = sin(m_omega[index] * wt);
+
+            m_hktReal[index] =  (hokReal    *  coswt) + (hokImag    *  sinwt) +
+                                (hokRealOpp *  coswt) - (hokImagOpp *  sinwt);  //complex conjugage
+
+            m_hktImag[index] =  (-hokReal    *  sinwt) + (hokImag    *  coswt) +
+                                (hokRealOpp *  sinwt) + (hokImagOpp *  coswt);  //complex conjugage
+        }
+
+        // free up memory
+        m_hokReal   = std::vector<float>();
+        m_hokImag   = std::vector<float>();
+        m_omega     = std::vector<float>();
     }
 
     u_int32_t GenerateUID(const float xCoord, const float zCoord) const
