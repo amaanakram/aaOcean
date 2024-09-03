@@ -1,3 +1,4 @@
+#pragma once
 /**
  * @file dSFMT.c
  * @brief double precision SIMD-oriented Fast Mersenne Twister (dSFMT)
