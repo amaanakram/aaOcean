@@ -37,6 +37,16 @@ inline bool isfEqual(float x, float y, const float epsilon)
    return fabs(x - y) <= epsilon;  // very basic float comparator
 }
 
+bool isFlEqual(float x, float y, const float epsilon = aa_FLT_EPSILON)
+{
+    if (fabs(x - y) <= epsilon) {
+        return true;
+    }
+    // Check relative error
+    float relativeError = fabs(x - y) / std::max(fabs(x), fabs(y));
+    return relativeError <= epsilon;
+}
+
 inline float isEven(int x)
 {
     // used in FFT
