@@ -19,7 +19,9 @@
 #include <cmath>
 #include <algorithm> 
 #include <limits.h>
-
+#include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "dSFMT/dSFMT.c"
 #include "constants.h"
 #include "functionLib.h"
@@ -28,11 +30,37 @@
 class aaSpectrum
 {
 public:
-    aaSpectrum();
-    ~aaSpectrum();
+
+    aaSpectrum()
+    {
+        m_hokReal = m_hokImag = m_hktReal = m_hktImag = m_omega = nullptr;
+    }
+
+    ~aaSpectrum()
+    {
+        if(m_hokReal)
+            free(m_hokReal);
+        if(m_hokImag)
+            free(m_hokImag);
+        if(m_hktReal)
+            free(m_hktReal);
+        if(m_hktImag)
+            free(m_hktImag);
+        if(m_omega)
+            free(m_omega);
+    }
+
+    void allocate(size_t alignment = 16)
+    {
+        size_t size_flt_array = m_resolution * m_resolution * sizeof(float*);
+        m_hokReal = static_cast<float*>(aligned_alloc(alignment, size_flt_array ));
+        m_hokImag = static_cast<float*>(aligned_alloc(alignment, size_flt_array ));
+        m_hktReal = static_cast<float*>(aligned_alloc(alignment, size_flt_array ));
+        m_hktImag = static_cast<float*>(aligned_alloc(alignment, size_flt_array ));
+        m_omega   = static_cast<float*>(aligned_alloc(alignment, size_flt_array ));
+    }
 
     // main input function
-    // should be called from SpectrumEvaluate
     void input(
         int     resolution,
         unsigned int  spectrum,
@@ -57,9 +85,7 @@ public:
         float   jswpfetch = 100.f,
         float   swell = 0.0f)
     {
-        resolution = static_cast<int>(powf(2.0f, (4 + abs(resolution))));
-        if (m_resolution != resolution)
-            m_resolution = resolution;
+        m_resolution = static_cast<int>(powf(2.0f, (4 + abs(resolution))));
 
         // scaled for better UI control
         if (spectrum < 2 )
@@ -79,15 +105,15 @@ public:
         m_time          = time;
         m_waveSpeed     = waveSpeed;
 
-        if (chopAmount > aa_FLT_EPSILON)
+        if (chopAmount > aa_EPSILON)
             m_chopAmount = chopAmount;
         else
             m_chopAmount = 0.0f;
 
         // clamping to minimum value
-        oceanScale  = std::max<float>(oceanScale, aa_FLT_EPSILON);
-        velocity    = std::max<float>(velocity, aa_FLT_EPSILON);
-        oceanDepth  = std::max<float>(oceanDepth, aa_FLT_EPSILON);
+        oceanScale  = std::max<float>(oceanScale, aa_EPSILON);
+        velocity    = std::max<float>(velocity, aa_EPSILON);
+        oceanDepth  = std::max<float>(oceanDepth, aa_EPSILON);
         // scaling for better UI control
         cutoff = fabsf(cutoff * 0.01f);
         // to radians
@@ -118,6 +144,8 @@ public:
     void BuildSpectrum()
     {
         Timer timer;
+        allocate();
+
         const int n = m_resolution;
         const int nn = n * n;
         const int n_sq = n * n - 1;
@@ -125,18 +153,14 @@ public:
         const int half_n = (-n / 2) - ((n - 1) / 2);
         const int half_n_plus_1 = n/2 + 1;
 
-        const float     k_mult = aa_TWOPI / m_oceanScale;
-        const float     windx = cos(m_windDir);
-        const float     windz = sin(m_windDir);
-        const float     omega0 = aa_TWOPI / m_loopTime;
-        const float     wt = m_waveSpeed * m_time;
+        const float k_mult = aa_TWOPI / m_oceanScale;
+        const float windx = cosf(m_windDir);
+        const float windz = sinf(m_windDir);
+        const float omega0 = aa_TWOPI / m_loopTime;
+        const float wt = m_waveSpeed * m_time;
         
-        m_hokImag.resize(nn);
-        m_hokReal.resize(nn);
-        m_omega.resize(nn);
-
         bool bDamp = 0;
-        if (m_damp > 0.0f)
+        if (m_damp > aa_EPSILON)
             bDamp = 1;
 
         dsfmt_t dsfmt;
@@ -162,7 +186,7 @@ public:
                 dsfmt_init_gen_rand(&dsfmt, uID + m_seed);
                 rand1 = static_cast<float>(gaussian(dsfmt));
                 rand2 = static_cast<float>(gaussian(dsfmt));
-                if (m_randWeight > 0.0f)
+                if (m_randWeight > aa_EPSILON)
                 {
                     float u1 = static_cast<float>(uniform(dsfmt));
                     float u2 = static_cast<float>(uniform(dsfmt));
@@ -185,7 +209,6 @@ public:
                 {
                     omega = sqrtf(omega);
                     spectrum = spPiersonMoskowitz(omega, k_sq);
-
                 }
                 else if (m_spectrum == 2) //  Texel MARSEN ARSLOE (TMA) SpectruM
                 {
@@ -197,13 +220,11 @@ public:
                     // modifying dispersion for capillary waves
                     omega = aa_GRAVITY * k_mag * (1.0f + k_sq * m_surfaceTension * m_surfaceTension);
                     omega = sqrt(omega);
-                    // add time looping support with OmegaNought
                     omega = (int(omega / omega0)) * omega0;
-
                     spectrum = sqrtf(spPhilips(k_sq));
                 }
 
-                // spectrum-type indenpendant modifications
+                // spectrum indenpendant modifications
                 k_dot_w = (kX * k_mag_inv * windx) + (kZ * k_mag_inv * windz);
                 spectrum *= powf(k_dot_w, m_windAlign);  // bias towards wind dir
                 spectrum *= expf(-k_sq * m_cutoff);      // eliminate wavelengths smaller than cutoff
@@ -217,11 +238,6 @@ public:
                 m_omega[index] = omega;
             }
         }
-        timer.printElapsed("[aaOcean Spectrum] Setup Grid Done");
-
-        //allocate memory
-        m_hktImag.resize(nn);
-        m_hktReal.resize(nn);
 
         #pragma omp parallel for
         for (size_t index = 0; index < nn; ++index)
@@ -234,8 +250,8 @@ public:
             hokRealOpp = m_hokReal[index_rev];
             hokImagOpp = m_hokImag[index_rev];
 
-            coswt = cos(m_omega[index] * wt);
-            sinwt = sin(m_omega[index] * wt);
+            coswt = cosf(m_omega[index] * wt);
+            sinwt = sinf(m_omega[index] * wt);
 
             m_hktReal[index] =  (hokReal    *  coswt) + (hokImag    *  sinwt) +
                                 (hokRealOpp *  coswt) - (hokImagOpp *  sinwt);  //complex conjugage
@@ -244,10 +260,9 @@ public:
                                 (hokRealOpp *  sinwt) + (hokImagOpp *  coswt);  //complex conjugage
         }
 
-        // free up memory
-        m_hokReal   = std::vector<float>();
-        m_hokImag   = std::vector<float>();
-        m_omega     = std::vector<float>();
+        char message[256];
+        sprintf(message, "[aaOcean Spectrum] Spectrum done for [%d x %d] ocean", m_resolution, m_resolution);
+        timer.printElapsed(message, true);
     }
 
     u_int32_t GenerateUID(const float xCoord, const float zCoord) const
@@ -284,6 +299,8 @@ public:
 
     float spPhilips(float k_sq)
     {
+        // The Phillips Spectrum serves as a theoretical baseline for fully developed waves
+
         const float L = m_velocity * m_velocity / aa_GRAVITY;
         return ((expf(-1.0f / (L * L * k_sq))) / (k_sq * k_sq)) * m_spectrumMult;
     }
@@ -308,6 +325,7 @@ public:
         // This function is based on the following paper
         // Empirical Directional Wave Spectra for Computer Graphics
         // Christopher J. Horvath
+        // for shallow seas
 
         float dimensionlessFetch = abs(aa_GRAVITY * m_jswpfetch / (m_velocity * m_velocity));
         float alpha = 0.076f * powf(dimensionlessFetch, -0.22f);
@@ -336,6 +354,11 @@ public:
     float spJONSWAP()
     {
         // https://wikiwaves.org/Ocean-Wave_Spectra
+        // JONSWAP Spectrum (Joint North Sea Wave Project)
+        // JONSWAP is a more realistic model for young, growing seas, capturing the peaked energy distribution observed in nature, 
+        // while Phillips is a more simplified, theoretical approach for fully developed seas.
+        // TODO: implement JONSWAP
+        return 1.f;
     }
 
 private:
@@ -365,14 +388,20 @@ private:
 
     //std::vector<int>    m_xCoord;  // holds ocean grid coordinates
     //std::vector<int>    m_zCoord;  // holds ocean grid coordinates
-    std::vector<float>  m_hokReal; // real component of HoK (see Tessendorf paper)
-    std::vector<float>  m_hokImag; // imaginary component of HoK (see Tessendorf paper)
-    std::vector<float>  m_hktReal; // real component of HkT (see Tessendorf paper)
-    std::vector<float>  m_hktImag; // real component of HkT (see Tessendorf paper)
-    std::vector<float>  m_omega;   // omega (see Tessendorf paper)
+    //std::vector<float>  m_hokReal; // real component of HoK (see Tessendorf paper)
+    //std::vector<float>  m_hokImag; // imaginary component of HoK (see Tessendorf paper)
+    //std::vector<float>  m_hktReal; // real component of HkT (see Tessendorf paper)
+    //std::vector<float>  m_hktImag; // real component of HkT (see Tessendorf paper)
+    //std::vector<float>  m_omega;   // omega (see Tessendorf paper)
     //std::vector<float>  m_kX;      // x-component of wave vector
     //std::vector<float>  m_kZ;      // z-component of wave vector
     //std::vector<float>  m_rand1;   // random number array 
     //std::vector<float>  m_rand2;   // random number array 
+
+    float *m_hokReal; // real component of HoK (see Tessendorf paper)
+    float *m_hokImag; // imaginary component of HoK (see Tessendorf paper)
+    float *m_hktReal; // real component of HkT (see Tessendorf paper)
+    float *m_hktImag; // real component of HkT (see Tessendorf paper)
+    float *m_omega;   // omega (see Tessendorf paper)
 };
 #endif
