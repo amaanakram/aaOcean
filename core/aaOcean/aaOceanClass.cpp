@@ -31,7 +31,7 @@ aaOcean::aaOcean() :
     m_resolution(-1),
     m_spectrum(0),
     m_seed(1),
-    m_windAlign(0),
+    m_windAlign(2),
     m_velocity(15.0f),
     m_windDir(45.0f),
     m_cutoff(-1.0f),
@@ -197,9 +197,8 @@ void aaOcean::input(
     m_waveSpeed     = waveSpeed;
     m_doFoam        = doFoam;
 
-    if (chopAmount > 1.0e-6f)
+    if (chopAmount > aa_EPSILON)
     {
-        // scaled for better UI control
         m_chopAmount = chopAmount;
         m_doChop = 1;
     }
@@ -209,18 +208,13 @@ void aaOcean::input(
         m_chopAmount = 0.0f;
     }
 
-    // clamping to minimum value
-    oceanScale = maximum<float>(oceanScale, 1.0e-6f);
-    velocity = maximum<float>(velocity, 1.0e-6f);
-    oceanDepth = maximum<float>(oceanDepth, 1.0e-6f);
-    // scaling for better UI control
-    cutoff = fabs(cutoff * 0.01f);
-    // to radians
-    windDir = windDir * aa_PIBY180;
-    // forcing to even numbers
-    windAlign = std::max<int>((windAlign + 1) & ~1, 2);
-    // clamping to a maximum value of 1
-    damp = minimum<float>(damp, 1.0f);
+    oceanScale  = maximum<float>(oceanScale, aa_EPSILON);
+    velocity    = maximum<float>(velocity,   aa_EPSILON);
+    oceanDepth  = maximum<float>(oceanDepth, aa_EPSILON);
+    cutoff = fabs(cutoff * 0.01f);                      // scaling for better UI control
+    windDir = windDir * aa_PIBY180;                     // to radians
+    windAlign = std::max<int>((windAlign + 1) & ~1, 0); // forcing to even numbers
+    damp = std::clamp(damp, 0.0f, 1.0f);
 
     if (m_oceanScale != oceanScale          ||
         m_spectrum != spectrum              ||
