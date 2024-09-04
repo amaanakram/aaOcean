@@ -218,7 +218,7 @@ void aaOcean::input(
     // to radians
     windDir = windDir * aa_PIBY180;
     // forcing to even numbers
-    windAlign = maximum<int>(((windAlign + 1) * 2), 2);
+    windAlign = std::max<int>((windAlign + 1) & ~1, 2);
     // clamping to a maximum value of 1
     damp = minimum<float>(damp, 1.0f);
 
