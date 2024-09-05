@@ -105,23 +105,14 @@ public:
         m_time          = time;
         m_waveSpeed     = waveSpeed;
 
-        if (chopAmount > aa_EPSILON)
-            m_chopAmount = chopAmount;
-        else
-            m_chopAmount = 0.0f;
-
-        // clamping to minimum value
-        oceanScale  = std::max<float>(oceanScale, aa_EPSILON);
-        velocity    = std::max<float>(velocity, aa_EPSILON);
-        oceanDepth  = std::max<float>(oceanDepth, aa_EPSILON);
-        // scaling for better UI control
-        cutoff = fabsf(cutoff * 0.01f);
-        // to radians
-        windDir = windDir * aa_PIBY180;
-        // forcing to even numbers
-        windAlign = std::max<int>(((windAlign + 1) * 2), 2);
-        // clamping to a maximum value of 1
-        damp = std::min<float>(damp, 1.0f);
+        m_chopAmount    = std::max(chopAmount, aa_EPSILON);
+        oceanScale      = std::max(oceanScale, aa_EPSILON);
+        velocity        = std::max(velocity,   aa_EPSILON);
+        oceanDepth      = std::max(oceanDepth, aa_EPSILON);
+        cutoff          = std::fabs(cutoff * 0.01f);              // scaling for better UI control
+        windDir         = windDir * aa_PIBY180;                   // to radians
+        windAlign       = std::max<int>((windAlign + 1) & ~1, 0); // forcing to even numbers
+        damp            = std::clamp(damp, 0.0f, 1.0f);
         
         m_seed = seed;
         m_oceanScale = oceanScale;
