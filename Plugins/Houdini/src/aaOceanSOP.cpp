@@ -151,7 +151,7 @@ PRM_Template aaOceanSOP::myTemplateList[] =
     PRM_Template(PRM_FLT_J, 1, &names[5],  &velocityDefault,    0, &velocityRange),         // velocity (Wave Size) //5
     PRM_Template(PRM_FLT_J, 1, &names[7],  PRMzeroDefaults,     0, &PRMangleRange),         // windDir      // 7
     PRM_Template(PRM_FLT_J, 1, &names[9],  PRMzeroDefaults,     0, &PRMunitRange),          // damp         // 9
-    PRM_Template(PRM_INT_E, 1, &names[8],  PRMzeroDefaults,     0, &PRMdivision0Range),     // windAlign    // 8
+    PRM_Template(PRM_INT_E, 1, &names[8],  PRMoneDefaults,      0, &PRMrolloffRange),       // windAlign    // 8
 
     PRM_Template(PRM_FLT_J, 1, &names[19], &peakSharpeningDefault,0, &peakSharpeningRange), // peak sharpening// 19
     PRM_Template(PRM_FLT_J, 1, &names[20], &fetchDefault,        0, &fetchRange),           // fetch // 20
