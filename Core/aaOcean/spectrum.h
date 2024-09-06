@@ -22,6 +22,8 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <tuple>
+
 #include "dSFMT/dSFMT.c"
 #include "constants.h"
 #include "functionLib.h"
@@ -29,6 +31,37 @@
 
 class aaSpectrum
 {
+private:
+    int     m_resolution;     // resolution in powers of 2
+    unsigned int m_seed;      // seed for random number generator
+    unsigned int m_spectrum;  // philips, JONSWAP, PM , TMA etc.
+    float   m_oceanScale;     // size of the ocean patch to generate in meters
+    float   m_velocity;       // exposed as 'Wave Size' in some aaOcean plugins
+    float   m_windDir;        // wind direction in degrees
+    int     m_windAlign;      // stretches waves perpendicular to wind direction
+    float   m_cutoff;         // cuts off waves smaller than this wavelength (smoothes ocean surface)
+    float   m_damp;           // Damps waves travelling opposite the wind direction (wave reflection)
+    float   m_chopAmount;     // squeezes the wave peaks to make them appear choppy
+    float   m_waveHeight;     // wave height field multiplier
+    float   m_waveSpeed;      // wave movement multiplier
+    float   m_time;           // current time in seconds
+    float   m_loopTime;       // time in seconds before the ocean shape repeats/loops
+    float   m_oceanDepth;     // slows waves down with decreasing depth
+    float   m_surfaceTension; // generates fast moving, high frequency waves
+    float   m_randWeight;     // control blend between rand distributions
+
+    // optional variables
+    float   m_spectrumMult;     // multiplier for generated spectrum
+    float   m_peakSharpening;   // JONSWAP Peak Sharpening
+    float   m_jswpfetch;        // wind region
+    float   m_swell;            // swell
+
+    float *m_hokReal; // real component of HoK (see Tessendorf paper)
+    float *m_hokImag; // imaginary component of HoK (see Tessendorf paper)
+    float *m_hktReal; // real component of HkT (see Tessendorf paper)
+    float *m_hktImag; // real component of HkT (see Tessendorf paper)
+    float *m_omega;   // omega (see Tessendorf paper)
+
 public:
 
     aaSpectrum()
@@ -135,6 +168,7 @@ public:
     void BuildSpectrum()
     {
         Timer timer;
+
         allocate();
 
         const int n = m_resolution;
@@ -352,35 +386,24 @@ public:
         return 1.f;
     }
 
-private:
-    int     m_resolution;     // resolution in powers of 2
-    unsigned int m_seed;      // seed for random number generator
-    unsigned int m_spectrum;  // philips, JONSWAP, PM , TMA etc.
-    float   m_oceanScale;     // size of the ocean patch to generate in meters
-    float   m_velocity;       // exposed as 'Wave Size' in some aaOcean plugins
-    float   m_windDir;        // wind direction in degrees
-    int     m_windAlign;      // stretches waves perpendicular to wind direction
-    float   m_cutoff;         // cuts off waves smaller than this wavelength (smoothes ocean surface)
-    float   m_damp;           // Damps waves travelling opposite the wind direction (wave reflection)
-    float   m_chopAmount;     // squeezes the wave peaks to make them appear choppy
-    float   m_waveHeight;     // wave height field multiplier
-    float   m_waveSpeed;      // wave movement multiplier
-    float   m_time;           // current time in seconds
-    float   m_loopTime;       // time in seconds before the ocean shape repeats/loops
-    float   m_oceanDepth;     // slows waves down with decreasing depth
-    float   m_surfaceTension; // generates fast moving, high frequency waves
-    float   m_randWeight;     // control blend between rand distributions
+    std::tuple<float, float> GetSpectralData(float uCoord, float vCoord) const
+    {
+        // begin UV coordinate wrapping to [0-1] interval
+        uCoord = fmod(uCoord, 1.0f);
+        vCoord = fmod(vCoord, 1.0f);
+        if(uCoord < 0.0f)
+            uCoord = (fabs(uCoord) >= aa_EPSILON) ? 1.0f + uCoord : 0.0f;
+        if(vCoord < 0.0f)
+            vCoord = (fabs(vCoord) >= aa_EPSILON) ? 1.0f + vCoord : 0.0f;
 
-    // optional variables
-    float   m_spectrumMult;     // multiplier for generated spectrum
-    float   m_peakSharpening;   // JONSWAP Peak Sharpening
-    float   m_jswpfetch;        // wind region
-    float   m_swell;            // swell
+        // use UV coordinates to work out array indeces
+        float u = uCoord * static_cast<float>(m_resolution);
+        float v = vCoord * static_cast<float>(m_resolution);
+        int x = static_cast<int>(floor(u));
+        int y = static_cast<int>(floor(v));
 
-    float *m_hokReal; // real component of HoK (see Tessendorf paper)
-    float *m_hokImag; // imaginary component of HoK (see Tessendorf paper)
-    float *m_hktReal; // real component of HkT (see Tessendorf paper)
-    float *m_hktImag; // real component of HkT (see Tessendorf paper)
-    float *m_omega;   // omega (see Tessendorf paper)
+        int array_index = x * m_resolution + y;
+        return std::make_tuple(m_hktReal[array_index], m_hktImag[array_index]);
+    }
 };
 #endif
