@@ -123,7 +123,6 @@ node_update
         AiNodeGetFlt(node, "swell"));
     
     pSpectrum->BuildSpectrum();
-    
     timer.printElapsed("[aaOcean Shader] node_update finished");
 }
 
@@ -131,6 +130,7 @@ shader_evaluate
 {
     // retrieve ocean pointer from user-data
     aaSpectrum* pSpectrum = reinterpret_cast<aaSpectrum*>(AiNodeGetLocalData(node));
+    AiStateSetMsgPtr(AtString("aaOceanSpectrum"), (void*)pSpectrum);
 
     // get our UV's
     AtVector2 uvPt;
@@ -142,10 +142,13 @@ shader_evaluate
         uvPt.y = sg->v;
     }
 
+    AtRGB spectrum; 
+    std::tie(spectrum.r, spectrum.g) = pSpectrum->GetSpectralData(uvPt.x, uvPt.y);
+
     // store result in output
-    sg->out.RGBA().r = 0.f;
-    sg->out.RGBA().g = 0.f;
-    sg->out.RGBA().b = 0.f;
+    sg->out.RGB().r = spectrum.r;
+    sg->out.RGB().g = spectrum.g;
+    sg->out.RGB().b = 0.f;
 }
 
 node_initialize
