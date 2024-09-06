@@ -20,6 +20,7 @@
 #include <climits>
 #include <float.h>
 #include <string>
+#include <algorithm>
 #include "dSFMT/dSFMT.c"
 #include "constants.h"
 #include "functionLib.h"
