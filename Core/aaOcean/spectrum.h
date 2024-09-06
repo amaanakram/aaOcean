@@ -377,18 +377,6 @@ private:
     float   m_jswpfetch;        // wind region
     float   m_swell;            // swell
 
-    //std::vector<int>    m_xCoord;  // holds ocean grid coordinates
-    //std::vector<int>    m_zCoord;  // holds ocean grid coordinates
-    //std::vector<float>  m_hokReal; // real component of HoK (see Tessendorf paper)
-    //std::vector<float>  m_hokImag; // imaginary component of HoK (see Tessendorf paper)
-    //std::vector<float>  m_hktReal; // real component of HkT (see Tessendorf paper)
-    //std::vector<float>  m_hktImag; // real component of HkT (see Tessendorf paper)
-    //std::vector<float>  m_omega;   // omega (see Tessendorf paper)
-    //std::vector<float>  m_kX;      // x-component of wave vector
-    //std::vector<float>  m_kZ;      // z-component of wave vector
-    //std::vector<float>  m_rand1;   // random number array 
-    //std::vector<float>  m_rand2;   // random number array 
-
     float *m_hokReal; // real component of HoK (see Tessendorf paper)
     float *m_hokImag; // imaginary component of HoK (see Tessendorf paper)
     float *m_hktReal; // real component of HkT (see Tessendorf paper)
