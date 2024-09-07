@@ -51,16 +51,18 @@ private:
     float   m_randWeight;     // control blend between rand distributions
 
     // optional variables
-    float   m_spectrumMult;     // multiplier for generated spectrum
-    float   m_peakSharpening;   // JONSWAP Peak Sharpening
-    float   m_jswpfetch;        // wind region
-    float   m_swell;            // swell
+    float   m_spectrumMult;   // multiplier for generated spectrum
+    float   m_peakSharpening; // JONSWAP Peak Sharpening
+    float   m_jswpfetch;      // wind region
+    float   m_swell;          // swell
 
-    float *m_hokReal; // real component of HoK (see Tessendorf paper)
-    float *m_hokImag; // imaginary component of HoK (see Tessendorf paper)
-    float *m_hktReal; // real component of HkT (see Tessendorf paper)
-    float *m_hktImag; // real component of HkT (see Tessendorf paper)
-    float *m_omega;   // omega (see Tessendorf paper)
+    float *m_hokReal;         // real component of HoK (see Tessendorf paper)
+    float *m_hokImag;         // imaginary component of HoK (see Tessendorf paper)
+    float *m_hktReal;         // real component of HkT (see Tessendorf paper)
+    float *m_hktImag;         // real component of HkT (see Tessendorf paper)
+    float *m_omega;           // omega (see Tessendorf paper)
+    
+    std::string m_name;       // spectrum's name
 
 public:
 
@@ -95,6 +97,7 @@ public:
 
     // main input function
     void input(
+        std::string name,
         int     resolution,
         unsigned int  spectrum,
         unsigned int  seed,
@@ -119,6 +122,7 @@ public:
         float   swell = 0.0f)
     {
         m_resolution = static_cast<int>(powf(2.0f, (4 + abs(resolution))));
+        m_name = name;
 
         // scaled for better UI control
         if (spectrum < 2 )
@@ -126,12 +130,6 @@ public:
             // for Philips and PM spectrums
             waveHeight *= 0.01f;
             chopAmount *= 0.01f;
-        }
-        else
-        {
-            // TMA spectrum
-            waveHeight *= 0.1f;
-            chopAmount *= 0.1f;
         }
 
         m_waveHeight    = waveHeight;
