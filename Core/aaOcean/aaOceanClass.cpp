@@ -186,12 +186,6 @@ void aaOcean::input(
         waveHeight *= 0.01f;
         chopAmount *= 0.01f;
     }
-    else
-    {
-        // TMA spectrum
-        waveHeight *= 0.1f;
-        chopAmount *= 0.1f;
-    }
 
     m_waveHeight    = waveHeight;
     m_time          = time;
