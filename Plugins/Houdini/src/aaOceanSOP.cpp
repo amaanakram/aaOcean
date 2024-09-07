@@ -119,7 +119,7 @@ static PRM_Range        peakSharpeningRange(PRM_RANGE_RESTRICTED, 0.001, PRM_RAN
 static PRM_Default      peakSharpeningDefault(1.0);
 
 static PRM_Range        fetchRange(PRM_RANGE_RESTRICTED, 0.0001, PRM_RANGE_UI, 1000.0);
-static PRM_Default      fetchDefault(20.0);
+static PRM_Default      fetchDefault(100.0);
 
 static PRM_Range        swellRange(PRM_RANGE_RESTRICTED, 0.0, PRM_RANGE_UI, 1.f);
 static PRM_Default      swellDefault(0.0);

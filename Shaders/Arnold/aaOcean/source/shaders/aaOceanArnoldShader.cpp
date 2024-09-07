@@ -101,7 +101,7 @@ node_parameters
     AiParameterFlt ( "randWeight"       , 0.0f);
     AiParameterFlt ( "spectrumMult"     , 1.0f);
     AiParameterFlt ( "peakSharpening"   , 1.0f);
-    AiParameterFlt ( "jswpfetch"        , 1.0f);
+    AiParameterFlt ( "jswpfetch"        , 100.0f);
     AiParameterFlt ( "swell"            , 0.0f);
 }
 
