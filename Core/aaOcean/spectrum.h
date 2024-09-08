@@ -61,8 +61,6 @@ private:
     float *m_hktReal;         // real component of HkT (see Tessendorf paper)
     float *m_hktImag;         // real component of HkT (see Tessendorf paper)
     float *m_omega;           // omega (see Tessendorf paper)
-    
-    std::string m_name;       // spectrum's name
 
 public:
 
@@ -97,7 +95,6 @@ public:
 
     // main input function
     void input(
-        std::string name,
         int     resolution,
         unsigned int  spectrum,
         unsigned int  seed,
@@ -122,7 +119,6 @@ public:
         float   swell = 0.0f)
     {
         m_resolution = static_cast<int>(powf(2.0f, (4 + abs(resolution))));
-        m_name = name;
 
         // scaled for better UI control
         if (spectrum < 2 )
