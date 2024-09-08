@@ -656,10 +656,18 @@ float aaOcean::tma(float omega, int index)
     return  tma * m_spectrumMult;
 }
 
-float aaOcean::swell(float omega, float kdotw, float k_mag)
+float aaOcean::swell(float spectrumValue, float kdotw, float k_mag)
 {
     // TODO: implement frequency-dependent swell generation
-    return 1.f;
+    float freq = std::sqrt(k_mag * aa_GRAVITY) / (2.f * aa_PI);
+
+    // Low-frequency threshold for identifying swells
+    const float swellThreshold = 0.2f;  // Adjust this threshold as needed
+
+    if (freq < swellThreshold) 
+        return spectrumValue * (1.0f + m_swell);
+
+    return spectrumValue;
 }
 
 void aaOcean::evaluateHokData()
@@ -694,12 +702,34 @@ void aaOcean::evaluateHokData()
         {
             m_omega[index] = sqrt(m_omega[index]);
             m_fftSpectrum[index] = piersonMoskowitz(m_omega[index], k_sq);
+            m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
 
         }
         else if (m_spectrum == 2) //  Texel MARSEN ARSLOE (TMA) SpectruM
         {
             m_omega[index] = sqrt(m_omega[index]);
             m_fftSpectrum[index] = tma(m_omega[index], index);
+            m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
+        }
+        else if (m_spectrum == 3) //  JONSWAP
+        {
+            if (k_mag < aa_EPSILON)
+                m_fftSpectrum[index] = 0.f;
+            else
+            {
+                const float alpha = 0.076f * .0001f;  // Scaling factor
+                const float sigma_low = 0.07f;
+                const float sigma_high = 0.09f;
+                const float fp = m_swell;
+                const float gamma = 3.3f;  // Peak enhancement factor
+
+                float f = std::sqrt(k_mag * aa_GRAVITY) / (2.f * aa_PI);
+                float sigma = (f <= fp) ? sigma_low : sigma_high;
+                float r = std::exp(-std::pow(f - fp, 2) / (2 * std::pow(sigma * fp, 2)));
+                m_fftSpectrum[index] = alpha * std::pow(aa_GRAVITY, 2) * std::pow(f, -5) * 
+                                std::exp(-5.0f / 4.0f * std::pow(fp / f, 4)) * 
+                                std::pow(gamma, r) * m_spectrumMult;
+            }
         }
         else // Philips
         { 
