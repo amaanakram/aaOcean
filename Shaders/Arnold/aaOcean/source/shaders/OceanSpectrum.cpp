@@ -18,13 +18,17 @@
 #include "spectrum.h"
 #include "aaOceanClass.cpp"
 
+struct MsgContainer
+{
+    AtString msgName;
+    aaSpectrum *pSpectrum;
+};
+
 AI_SHADER_NODE_EXPORT_METHODS(OceanSpectrumMethods);
 
 enum aaOceanParams
 {
-    p_uv_coords,
-    p_useUVInput,
-    p_fade,
+    p_spectrumName,
     p_resolution,
     p_oceanScale,
     p_oceanDepth,
@@ -40,14 +44,7 @@ enum aaOceanParams
     p_windAlign,
     p_time,
     p_repeatTime,
-    p_gamma,
-    p_brightness,
-    p_raw,
-    p_invertFoam,
-    p_fMin,
-    p_fMax,
     p_currentFrame,
-    p_rotateUV,
     p_spectrum,
     p_randWeight,
     p_spectrumMult,
@@ -58,9 +55,7 @@ enum aaOceanParams
 
 node_parameters
 {
-    AiParameterVec ( "uv_coords"        , 1.0f, 1.0f, 1.0f);
-    AiParameterBool( "use_uv_input"     , 0);
-    AiParameterFlt ( "fade"             , 0.0f);
+    AiParameterStr ( "spectrumName"     , "OceanSpectrum");
     AiParameterInt ( "resolution"       , 4);
     AiParameterFlt ( "oceanScale"       , 100.0f);
     AiParameterFlt ( "oceanDepth"       , 10000.0f);
@@ -76,14 +71,7 @@ node_parameters
     AiParameterInt ( "windAlign"        , 0);
     AiParameterFlt ( "time"             , 0.1f);
     AiParameterFlt ( "repeatTime"       , 1000.f);
-    AiParameterFlt ( "gamma"            , 1.0f);
-    AiParameterFlt ( "brightness"       , 1.0f);
-    AiParameterBool( "raw"              , 0);
-    AiParameterBool( "invertFoam"       , 0);
-    AiParameterFlt ( "fMin"             , 0.0f);
-    AiParameterFlt ( "fMax"             , 0.0f);
     AiParameterInt ( "currentFrame"     , 1);
-    AiParameterBool( "rotateUV"         , 0);
     AiParameterInt ( "spectrum"         , 0);
     AiParameterFlt ( "randWeight"       , 0.0f);
     AiParameterFlt ( "spectrumMult"     , 1.0f);
@@ -96,7 +84,10 @@ node_update
 {
     Timer timer;
     // retrieve ocean pointer from user-data
-    aaSpectrum *pSpectrum = reinterpret_cast<aaSpectrum*>(AiNodeGetLocalData(node));
+    MsgContainer *msg = reinterpret_cast<MsgContainer*>(AiNodeGetLocalData(node));
+    msg->msgName = AiNodeGetStr(node, "spectrumName");
+    
+    aaSpectrum *pSpectrum = msg->pSpectrum;
 
     pSpectrum->input(
         AiNodeGetInt(node, "resolution"),
@@ -129,21 +120,16 @@ node_update
 shader_evaluate
 {
     // retrieve ocean pointer from user-data
-    aaSpectrum* pSpectrum = reinterpret_cast<aaSpectrum*>(AiNodeGetLocalData(node));
-    AiStateSetMsgPtr(AtString("aaOceanSpectrum"), (void*)pSpectrum);
+    MsgContainer *msg = reinterpret_cast<MsgContainer*>(AiNodeGetLocalData(node));
+    AiStateSetMsgPtr(msg->msgName, (void*)msg);
 
     // get our UV's
     AtVector2 uvPt;
-    if(AiShaderEvalParamBool(p_useUVInput))
-        uvPt = AiShaderEvalParamVec(p_uv_coords);
-    else
-    {
-        uvPt.x = sg->u;
-        uvPt.y = sg->v;
-    }
+    uvPt.x = sg->u;
+    uvPt.y = sg->v;
 
     AtRGB spectrum; 
-    std::tie(spectrum.r, spectrum.g) = pSpectrum->GetSpectralData(uvPt.x, uvPt.y);
+    std::tie(spectrum.r, spectrum.g) = msg->pSpectrum->GetSpectralData(uvPt.x, uvPt.y);
 
     // store result in output
     sg->out.RGB().r = spectrum.r;
@@ -154,16 +140,19 @@ shader_evaluate
 node_initialize
 {
     // store a new ocean pointer in user-data
-    aaSpectrum *pSpectrum = new aaSpectrum;
-    AiNodeSetLocalData(node, pSpectrum);
+
+    MsgContainer *msg = new MsgContainer;
+    msg->pSpectrum = new aaSpectrum;
+    AiNodeSetLocalData(node, msg);
     AiMsgInfo("[aaOcean Arnold] Created new Ocean Spectrum data");
 }
 
 node_finish
 {
     // retrieve ocean pointer from user-data
-    aaSpectrum* pSpectrum = reinterpret_cast<aaSpectrum*>(AiNodeGetLocalData(node));
-    delete pSpectrum;
+    MsgContainer* msg = reinterpret_cast<MsgContainer*>(AiNodeGetLocalData(node));
+    delete msg->pSpectrum;
+    delete msg;
     AiMsgInfo("[Spectrum] Deleted Ocean Spectrum");
 }
 
