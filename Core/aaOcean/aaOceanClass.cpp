@@ -702,14 +702,14 @@ void aaOcean::evaluateHokData()
         {
             m_omega[index] = sqrt(m_omega[index]);
             m_fftSpectrum[index] = piersonMoskowitz(m_omega[index], k_sq);
-            m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
+            //m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
 
         }
         else if (m_spectrum == 2) //  Texel MARSEN ARSLOE (TMA) SpectruM
         {
             m_omega[index] = sqrt(m_omega[index]);
             m_fftSpectrum[index] = tma(m_omega[index], index);
-            m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
+            //m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
         }
         else if (m_spectrum == 3) //  JONSWAP
         {
