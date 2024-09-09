@@ -17,11 +17,16 @@
 #include "ai.h"
 #include "spectrum.h"
 #include "aaOceanClass.cpp"
+#include <ai_critsec.h>
 
 struct MsgContainer
 {
     AtString msgName;
     aaSpectrum *pSpectrum;
+    bool msgSet;
+    AtMutex my_mutex;
+
+    MsgContainer() : msgSet(false) {}
 };
 
 AI_SHADER_NODE_EXPORT_METHODS(OceanSpectrumMethods);
@@ -121,7 +126,16 @@ shader_evaluate
 {
     // retrieve ocean pointer from user-data
     MsgContainer *msg = reinterpret_cast<MsgContainer*>(AiNodeGetLocalData(node));
-    AiStateSetMsgPtr(msg->msgName, (void*)msg);
+    if(msg->msgSet == false)
+    {
+        msg->my_mutex.lock();
+        if(msg->msgSet == false)
+        {
+            AiStateSetMsgPtr(msg->msgName, reinterpret_cast<void*>(msg));
+            msg->msgSet = true;
+        }
+        msg->my_mutex.unlock();
+    }
 
     // get our UV's
     AtVector2 uvPt;
