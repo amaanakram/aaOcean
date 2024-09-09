@@ -48,6 +48,7 @@ static PRM_Name spectrumNames[] =
     PRM_Name("Philips",  "Philips"),
     PRM_Name("Pierson-Morkowitz", "Pierson-Morkowitz"),
     PRM_Name("TMA",  "TMA"),
+    PRM_Name("JONSWAP",  "JONSWAP"),
     PRM_Name(0)
 };
 static PRM_ChoiceList spectrumNamesMenu(PRM_CHOICELIST_SINGLE, spectrumNames);
@@ -88,7 +89,7 @@ static PRM_Default      resolutionDefault(4);
 static PRM_Range        oceanScaleRange(PRM_RANGE_RESTRICTED, 0.0, PRM_RANGE_UI, 200.0);
 static PRM_Default      oceanScaleDefault(100.0);
 
-static PRM_Range        oceanDepthRange(PRM_RANGE_RESTRICTED, 0.001, PRM_RANGE_RESTRICTED, 10000.0);
+static PRM_Range        oceanDepthRange(PRM_RANGE_RESTRICTED, 1.0, PRM_RANGE_RESTRICTED, 10000.0);
 static PRM_Default      oceanDepthDefault(10000.0);
 
 static PRM_Range        seedRange(PRM_RANGE_RESTRICTED, 1, PRM_RANGE_RESTRICTED, 15);

@@ -621,15 +621,15 @@ float aaOcean::philips(float k_sq)
 
 float aaOcean::piersonMoskowitz(float omega, float k_sq)
 {
-    float peakOmegaPM = 0.87f * aa_GRAVITY / m_velocity;
+    float peakOmegaPM = 0.87f * aa_GRAVITY / (m_velocity / 2.f);
     
     const float alpha = 0.0081f;
-    const float beta = 1.29f;
+    const float beta = 5.29f;
 
     float spectrum = 100.f * alpha * aa_GRAVITYSQ / pow(omega, 5.f);
     spectrum *= exp(-beta * pow(peakOmegaPM / omega, 4.f));
 
-    return spectrum * m_spectrumMult;
+    return spectrum * m_spectrumMult * 5.f;
 }
 
 float aaOcean::tma(float omega, int index)
@@ -692,44 +692,43 @@ void aaOcean::evaluateHokData()
         m_kZ[index] = (float)m_zCoord[index] * k_mult;
         k_sq = (m_kX[index] * m_kX[index]) + (m_kZ[index] * m_kZ[index]);
         k_mag = sqrt(k_sq);
-        float k_mag_inv = 1.0f / k_mag;
-
-        // build dispersion relationship with oceanDepth relationship and capillary waves
-        m_omega[index] = aa_GRAVITY * k_mag * tanh(k_mag * m_oceanDepth);
-
+        if (k_mag < aa_EPSILON)
+                m_fftSpectrum[index] = 0.f;
+        
         // calculate spectrum
         if (m_spectrum == 1) // Pierson-Moskowitz
         {
+            // build dispersion relationship with oceanDepth relationship and capillary waves
+            m_omega[index] = aa_GRAVITY * k_mag * tanh(k_mag * m_oceanDepth);
             m_omega[index] = sqrt(m_omega[index]);
             m_fftSpectrum[index] = piersonMoskowitz(m_omega[index], k_sq);
-            //m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
 
         }
         else if (m_spectrum == 2) //  Texel MARSEN ARSLOE (TMA) SpectruM
         {
+            // build dispersion relationship with oceanDepth relationship and capillary waves
+            m_omega[index] = aa_GRAVITY * k_mag * tanh(k_mag * m_oceanDepth);
             m_omega[index] = sqrt(m_omega[index]);
             m_fftSpectrum[index] = tma(m_omega[index], index);
-            //m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag);
         }
         else if (m_spectrum == 3) //  JONSWAP
         {
-            if (k_mag < aa_EPSILON)
-                m_fftSpectrum[index] = 0.f;
-            else
-            {
-                const float alpha = 0.076f * .0001f;  // Scaling factor
-                const float sigma_low = 0.07f;
-                const float sigma_high = 0.09f;
-                const float fp = m_swell;
-                const float gamma = 3.3f;  // Peak enhancement factor
+            // Constants for the simulation
+            const float g = aa_GRAVITY;                     // Gravitational acceleration (m/s^2)
+            const float alpha = 0.0081f;                    // Empirical constant for wave growth
+            const float gamma = m_peakSharpening * 3.3f;    // Peak enhancement factor
+            const float sigma_low = 0.07f;                  // Sigma for f < f_peak
+            const float sigma_high = 0.09f;                 // Sigma for f > f_peak
+            const float wind_speed = m_velocity * 10.f;     // Wind speed at 10 meters above sea level (m/s)
+            const float fetch = m_jswpfetch * 100.f;        // Fetch distance in meters
 
-                float f = std::sqrt(k_mag * aa_GRAVITY) / (2.f * aa_PI);
-                float sigma = (f <= fp) ? sigma_low : sigma_high;
-                float r = std::exp(-std::pow(f - fp, 2) / (2 * std::pow(sigma * fp, 2)));
-                m_fftSpectrum[index] = alpha * std::pow(aa_GRAVITY, 2) * std::pow(f, -5) * 
-                                std::exp(-5.0f / 4.0f * std::pow(fp / f, 4)) * 
-                                std::pow(gamma, r) * m_spectrumMult;
-            }
+            const float f_peak = (3.5f * std::pow(g, 0.67f)) / (std::pow(wind_speed, 0.34f) * std::pow(fetch, 0.33f));
+            const float k_peak = 4.0f * aa_PI * aa_PI * f_peak * f_peak / g;
+            float sigma = (k_mag <= k_peak) ? sigma_low : sigma_high;
+            float S = alpha * g * g / std::pow(k_mag, 5.0f) * std::exp(-5.0f / 4.0f * std::pow(k_mag / k_peak, -4.0f));
+            float peak_factor = std::pow(gamma, std::exp(-std::pow((k_mag - k_peak), 2) / (2.0f * sigma * sigma * k_peak * k_peak)));
+
+            m_fftSpectrum[index] = std::sqrt(S * peak_factor / 2.0f) * m_spectrumMult * 0.01f;
         }
         else // Philips
         { 
@@ -742,10 +741,16 @@ void aaOcean::evaluateHokData()
             m_fftSpectrum[index] = sqrt(philips(k_sq));
         }
 
-        // spectrum-type indenpendant modifications
+        // bias towards wind dir
+        float k_mag_inv = 1.0f / k_mag;
         k_dot_w = (m_kX[index] * k_mag_inv * windx) + (m_kZ[index] * k_mag_inv * windz);
-        m_fftSpectrum[index] *= pow(k_dot_w, m_windAlign);  // bias towards wind dir
-        m_fftSpectrum[index] *= exp(-k_sq * m_cutoff);      // eliminate wavelengths smaller than cutoff
+        m_fftSpectrum[index] *= pow(k_dot_w, m_windAlign);  
+
+        // eliminate wavelengths smaller than cutoff
+         m_fftSpectrum[index] *= exp(-k_sq * m_cutoff);     
+
+        // swell
+        m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag); 
 
        // reduce reflected waves
         if (bDamp && (k_dot_w < 0.0f))
@@ -763,7 +768,6 @@ void aaOcean::evaluateHokData()
 
 void aaOcean::evaluateHieghtField()
 {
-
     Timer timer;
 
     const float wt = m_waveSpeed * m_time;
