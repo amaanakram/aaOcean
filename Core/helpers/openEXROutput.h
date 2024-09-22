@@ -81,6 +81,8 @@ void writeExr(const char fileName[], const float *rPixels, const float *gPixels,
     const float *bPixels, const float *aPixels, int width, int height)
 {
     EXR::Header header(width, height);
+    header.compression() = EXR::PIZ_COMPRESSION;
+
     header.channels().insert("R", EXR::Channel(EXR::FLOAT));
     header.channels().insert("G", EXR::Channel(EXR::FLOAT));
     header.channels().insert("B", EXR::Channel(EXR::FLOAT));
@@ -90,27 +92,27 @@ void writeExr(const char fileName[], const float *rPixels, const float *gPixels,
 
     EXR::FrameBuffer frameBuffer;
 
-    frameBuffer.insert("R",                    // name
-        EXR::Slice(EXR::FLOAT,     // type
-        (char *)rPixels,            // base
+    frameBuffer.insert("R",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)rPixels,                // base
             sizeof(*rPixels) * 1,       // xStride
             sizeof(*rPixels) * width)); // yStride
 
-    frameBuffer.insert("G",                    // name
-        EXR::Slice(EXR::FLOAT,     // type
-        (char *)gPixels,            // base
+    frameBuffer.insert("G",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)gPixels,                // base
             sizeof(*gPixels) * 1,       // xStride
             sizeof(*gPixels) * width)); // yStride
 
-    frameBuffer.insert("B",                    // name
-        EXR::Slice(EXR::FLOAT,     // type
-        (char *)bPixels,            // base
+    frameBuffer.insert("B",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)bPixels,                // base
             sizeof(*bPixels) * 1,       // xStride
             sizeof(*bPixels) * width)); // yStride
 
-    frameBuffer.insert("A",                    // name
-        EXR::Slice(EXR::FLOAT,     // type
-        (char *)aPixels,            // base
+    frameBuffer.insert("A",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)aPixels,                // base
             sizeof(*aPixels) * 1,       // xStride
             sizeof(*aPixels) * width)); // yStride
 
@@ -123,6 +125,7 @@ void writeSingleChannelExr(const char fileName[], const float *rPixels, int widt
 {
     EXR::Header header(width, height);
     header.channels().insert("R", EXR::Channel(EXR::FLOAT));
+    header.compression() = EXR::PIZ_COMPRESSION;
 
     EXR::OutputFile file(fileName, header);
 
@@ -166,7 +169,6 @@ void oceanDataToEXR(aaOcean *&pOcean, const char *outputFolder, const char *post
 
     for (int i = 0; i < dimension; i++)
     {
-#pragma omp parallel for
         for (int j = 0; j < dimension; j++)
         {
             gPixels[j][i] = green[i*dimension + j];
