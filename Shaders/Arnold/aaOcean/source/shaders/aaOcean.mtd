@@ -12,7 +12,7 @@ houdini.order STRING "folder1 "
 
 [attr resolution]
 min INT 4
-max INT 7
+max INT 8
 
 [attr spectrum]
 min INT 0
