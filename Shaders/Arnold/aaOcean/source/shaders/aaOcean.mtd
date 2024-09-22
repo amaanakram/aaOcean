@@ -1,0 +1,136 @@
+[node aaOcean]
+houdini.parm.folder.folder1 STRING "Ocean;6; Wave Params;3; Wind Params;4; TMA-Specific;3; Misc;7; UVs;4; Foam;6; OpenEXR Output;4;"
+houdini.order STRING "folder1 "
+"resolution spectrum oceanScale seed time timeOffset "
+"waveHeight waveSpeed chopAmount "
+"velocity windDir damp windAlign "
+"peakSharpening jswpfetch swell "
+"oceanDepth surfaceTension cutoff repeatTime spectrumMult randWeight fade "
+"use_uv_input uv_coords uvAttribute rotateUV transform "
+"raw gamma brightness invertFoam fMin fMax "
+"writeFile outputFolder postfix currentFrame "
+
+[attr resolution]
+min INT 4
+max INT 7
+
+[attr spectrum]
+min INT 0
+max INT 3
+
+[attr oceanScale]
+min FLOAT 0.001
+softmax FLOAT 2048
+
+[attr seed]
+min INT 1
+softmax INT 20
+
+[attr time]
+houdini.expression STRING "$FF/$FPS + ch(\'timeOffset\')"
+
+[attr timeOffset]
+
+######## Wave Params ########
+[attr waveHeight]
+min FLOAT 0.0
+softmax FLOAT 50.0
+
+[attr waveSpeed]
+softmin FLOAT -50.0
+softmax FLOAT 50.0
+
+[attr chopAmount]
+min FLOAT 0.0
+softmax FLOAT 10.0
+
+######## Wind Params ########
+[attr velocity]
+houdini.label STRING "Wave Size / Wind Velocity"
+min FLOAT 0.01
+max FLOAT 50.0
+
+[attr windDir]
+houdini.label STRING "Wind Direction"
+min FLOAT 0.0
+max FLOAT 360.0
+
+[attr damp]
+houdini.label STRING "Damp Reflected Waves"
+min FLOAT 0.0
+max FLOAT 1.0
+
+[attr windAlign]
+min INT 0
+softmax INT 10
+
+######## TMA-Specific ########
+[attr peakSharpening]
+min FLOAT 0.001
+softmax FLOAT 6.0
+
+[attr fetch]
+houdini.label STRING "TMA Fetch Distance"
+min FLOAT 0.001
+softmax FLOAT 1000.0
+
+[attr swell]
+min FLOAT 0.0
+softmax FLOAT 1.0
+
+######## Misc ########
+[attr oceanDepth]
+min FLOAT 1.0
+softmax FLOAT 10000.0
+
+[attr surfaceTension]
+min FLOAT 0.001
+softmax FLOAT 100.0
+
+[attr cutoff]
+houdini.label STRING "Wave Smooth"
+min FLOAT 0.0
+softmax FLOAT 50.0
+
+[attr repeatTime]
+houdini.label STRING "Loop Time"
+min FLOAT 0.0
+softmax FLOAT 2000.0
+
+[attr spectrumMult]
+houdini.label STRING "Spectrum Multiplier"
+min FLOAT 0.0001
+softmax FLOAT 5.0
+
+[attr randWeight]
+houdini.label STRING "Random Weight"
+min FLOAT 0.0
+max FLOAT 1.0
+
+[attr fade]
+
+######## UVs ########
+[attr use_uv_input]
+
+[attr uv_coords]
+
+[attr rotateUV]
+
+[attr transform]
+
+######## Foam ########
+
+[attr gamma]
+[attr brightness]
+[attr raw]
+[attr invertFoam]
+[attr fMin]
+[attr fMax]
+
+######## EXR Output ########    
+[attr writeFile]
+[attr outputFolder]
+[attr postfix]
+[attr currentFrame]
+houdini.expression STRING "$F"
+    

@@ -43,6 +43,7 @@ enum aaOceanParams
     p_damp,
     p_windAlign,
     p_time,
+    p_timeOffset,
     p_repeatTime,
     p_gamma,
     p_brightness,
@@ -84,6 +85,7 @@ node_parameters
     AiParameterFlt ( "damp"             , 0.985f);
     AiParameterInt ( "windAlign"        , 0);
     AiParameterFlt ( "time"             , 0.1f);
+    AiParameterFlt ( "timeOffset"       , 0.0f);
     AiParameterFlt ( "repeatTime"       , 1000.f);
     AiParameterFlt ( "gamma"            , 1.0f);
     AiParameterFlt ( "brightness"       , 1.0f);
@@ -111,6 +113,8 @@ node_update
     // retrieve ocean pointer from user-data
     aaOcean *pOcean = reinterpret_cast<aaOcean*>(AiNodeGetLocalData(node));
 
+    float currentTime = AiNodeGetFlt(node, "time") + AiNodeGetFlt(node, "timeOffset");
+
     // main input function
     pOcean->input(
         AiNodeGetInt(node, "resolution"),
@@ -127,7 +131,7 @@ node_update
         AiNodeGetFlt(node, "waveSpeed"),
         AiNodeGetFlt(node, "waveHeight"),
         AiNodeGetFlt(node, "chopAmount"),
-        AiNodeGetFlt(node, "time"),
+        currentTime,
         AiNodeGetFlt(node, "repeatTime"),
         TRUE,
         AiNodeGetFlt(node, "randWeight"),
