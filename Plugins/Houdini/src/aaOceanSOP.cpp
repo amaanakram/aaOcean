@@ -227,7 +227,6 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
         {
             // uv attribute not found
             char msg[512];
-            
             snprintf(msg, sizeof(msg),
             "[aaOcean SOP] Specified UV Attribute '%s' not found on input geometry. "
             "Please add in either Vertex or Point class\n",
@@ -240,7 +239,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
             return error();
         }
     }
-    
+
     // inputs validated. Begin writing ocean data to output handles
     // start pulling in SOP inputs and send to aaOcean 
     enableEigens = (ENABLEEIGENS() != 0);
@@ -271,8 +270,6 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
                     FETCH(now),
                     SWELLAMOUNT(now));
 
-    
-
     // setup local variables to output Eigens
     if(enableEigens)
     {
@@ -288,10 +285,8 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
         spectrumHandle = GA_RWHandleF(spectrumRef.getAttribute());
     }
     
-    int npts = gdp->getNumPoints();
-    
 	//#pragma omp parallel for 
-    for (int pt_index = 0; pt_index < npts; ++pt_index)
+    for (size_t pt_index = 0; pt_index < gdp->getNumPoints(); ++pt_index)
     {
         UT_Vector3F pos = gdp->getPos3(pt_index);
         UT_Vector3F uv;
