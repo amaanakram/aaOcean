@@ -167,6 +167,7 @@ void oceanDataToEXR(aaOcean *&pOcean, const char *outputFolder, const char *post
     EXR::Array2D<float> bPixels(dimension, dimension);
     EXR::Array2D<float> aPixels(dimension, dimension);
 
+    #pragma omp parallel for
     for (int i = 0; i < dimension; i++)
     {
         for (int j = 0; j < dimension; j++)
