@@ -207,7 +207,41 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
 
     // Flag the SOP as being time dependent (i.e. cook on time changes)
     flags().setTimeDep(true);
+
+    // get the user-specified attribute that holds uv-data
+    getUVAttributeName(UvAttribute);
+    if(UvAttribute.length() == 0)
+        UvAttribute = "uv";
+    const char* UVAttribName = (const char *)UvAttribute;
+    bool isVertexContext = false;
+
+    // assumming that UVs are defined per-Vertex
+    GA_ROHandleV3 UVHandle(gdp->findVertexAttribute(UVAttribName));
+
+    if (UVHandle.isValid())
+        isVertexContext = true;
+    else
+    {
+        UVHandle = gdp->findPointAttribute(UVAttribName);
+        if(!UVHandle.isValid())
+        {
+            // uv attribute not found
+            char msg[512];
+            
+            snprintf(msg, sizeof(msg),
+            "[aaOcean SOP] Specified UV Attribute '%s' not found on input geometry. "
+            "Please add in either Vertex or Point class\n",
+            UVAttribName);
+
+            std::cout<<msg;
+            std::cout.flush();
+            addError(SOP_ERR_INVALID_SRC, msg); 
+            unlockInputs();
+            return error();
+        }
+    }
     
+    // inputs validated. Begin writing ocean data to output handles
     // start pulling in SOP inputs and send to aaOcean 
     enableEigens = (ENABLEEIGENS() != 0);
     if(pOcean->isChoppy() && enableEigens)
@@ -237,30 +271,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
                     FETCH(now),
                     SWELLAMOUNT(now));
 
-    // get the user-specified attribute that holds uv-data
-    getUVAttributeName(UvAttribute);
-    if(UvAttribute.length() == 0)
-        UvAttribute = "uv";
-    const char* UVAttribName = (const char *)UvAttribute;
-    uvRef = gdp->findFloatTuple(GA_ATTRIB_POINT, UVAttribName, 3);
-
-    if(uvRef.isValid() == TRUE)
-    {
-        uvAttribute = uvRef.getAttribute();
-        uvTuple = uvRef.getAIFTuple(); 
-    }
-    else
-    {
-        // uv attribute not found
-        char msg[512];
-        snprintf(msg, sizeof(msg), "[aaOcean] Specified UV Point attribute \'%s\' not found on geometry.\
-                     \nCheck if Point-type UV's exist on input geometry", UVAttribName);
-        std::cout<<msg;
-        std::cout.flush();
-        addError(SOP_MESSAGE, msg); 
-        unlockInputs();
-        return error();
-    }
+    
 
     // setup local variables to output Eigens
     if(enableEigens)
@@ -277,20 +288,25 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
         spectrumHandle = GA_RWHandleF(spectrumRef.getAttribute());
     }
     
-    // inputs validated. Begin writing ocean data to output handles
     int npts = gdp->getNumPoints();
     
 	//#pragma omp parallel for 
-    for (int pt_offset = 0; pt_offset < npts; ++pt_offset)
+    for (int pt_index = 0; pt_index < npts; ++pt_index)
     {
-        UT_Vector3F pos = gdp->getPos3(pt_offset);
-        UT_Vector3F UV;
-        
-        uvTuple->get(uvAttribute, pt_offset, UV.data(), 3);
-        // Houdini V coord runs in opposite direction compared to Softimage/Maya
-        // Conforming with other apps to make ocean shape consistent across apps
-        const float u = UV.x();
-        const float v = UV.y(); 
+        UT_Vector3F pos = gdp->getPos3(pt_index);
+        UT_Vector3F uv;
+
+        if(isVertexContext)
+        {
+            // convert from Point to Vertex context
+            GA_Offset vtx_index = gdp->pointVertex(pt_index);   
+            uv = UVHandle.get(vtx_index);
+        }
+        else
+            uv = UVHandle.get(pt_index);
+
+        const float u = uv.x();
+        const float v = uv.y(); 
         
         pos.y() += pOcean->getOceanData(u, v, aaOcean::eHEIGHTFIELD);
 
@@ -300,9 +316,9 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
             pos.z() += pOcean->getOceanData(u, v, aaOcean::eCHOPZ);
         }
         
-       gdp->setPos3(pt_offset, pos);
+        gdp->setPos3(pt_index, pos); // not thread-safe
 
-       if(enableEigens)
+        if(enableEigens)
         {
             UT_Vector3F eigenVectorPlusValue;
             UT_Vector3F eigenVectorMinusValue;
@@ -315,14 +331,14 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
             eigenVectorMinusValue.y() = 0.0f;
             eigenVectorMinusValue.z() = pOcean->getOceanData(u, v, aaOcean::eEIGENMINUSZ);
 
-            eVecPlusHandle.set(pt_offset, eigenVectorPlusValue);
-            eVecMinusHandle.set(pt_offset, eigenVectorMinusValue);
+            eVecPlusHandle.set(pt_index, eigenVectorPlusValue);
+            eVecMinusHandle.set(pt_index, eigenVectorMinusValue);
 
             float eigenValue = pOcean->getOceanData(u, v, aaOcean::eFOAM);
-            eValuesHandle.set(pt_offset,eigenValue);
+            eValuesHandle.set(pt_index,eigenValue);
 
             float spectrumValue = pOcean->getOceanData(u, v, aaOcean::eSPECTRUM);
-            spectrumHandle.set(pt_offset, spectrumValue);
+            spectrumHandle.set(pt_index, spectrumValue);
         }
     }
     unlockInputs();
