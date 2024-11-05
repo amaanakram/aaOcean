@@ -27,7 +27,7 @@ min INT 1
 softmax INT 20
 
 [attr time]
-houdini.expression STRING "$FF/$FPS + ch(\'timeOffset\')"
+houdini.expression STRING "$FF/$FPS + ch('timeOffset')"
 
 [attr timeOffset]
 
