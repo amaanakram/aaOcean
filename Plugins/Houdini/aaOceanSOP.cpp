@@ -78,7 +78,7 @@ static PRM_Name names[] =
     PRM_Name("fetch",           "TMA Fetch"),
     PRM_Name("swellAmount",     "Swell Amount"),
     PRM_Name("randWeight",      "Random Weight"),
-
+    PRM_Name("time",            "Time"),
 };
 
 // defining some custom ranges and defaults
@@ -100,6 +100,9 @@ static PRM_Default      velocityDefault(4.0);
 
 static PRM_Range        waveSpeedRange(PRM_RANGE_UI, -10.0, PRM_RANGE_UI, 10.0);
 static PRM_Default      waveSpeedDefault(1.0);
+
+static PRM_Range        timeRange(PRM_RANGE_UI, 0, PRM_RANGE_UI, 1000.0);
+static PRM_Default      timeRangeDefault(1000.0);
 
 static PRM_Range        loopTimeRange(PRM_RANGE_RESTRICTED, 0.001, PRM_RANGE_UI, 1000.0);
 static PRM_Default      loopTimeDefault(1000.0);
@@ -140,6 +143,7 @@ PRM_Template aaOceanSOP::myTemplateList[] =
     PRM_Template(PRM_ORD, PRM_Template::PRM_EXPORT_MAX, 1, &names[17], 0, &spectrumNamesMenu),  // spectrum type
     PRM_Template(PRM_FLT_J, 1, &names[2],  &oceanScaleDefault,  0, &oceanScaleRange),           // oceanScale   // 2
     PRM_Template(PRM_INT_E, 1, &names[1],  &seedDefault,        0, &seedRange),                 // seed         // 1
+    PRM_Template(PRM_FLT_J, 1, &names[23], PRMzeroDefaults,     0, &timeRange),                 // time         // 23
     PRM_Template(PRM_FLT_J, 1, &names[14], PRMzeroDefaults,     0, &PRMscaleRange),             // timeOffset   // 14
     PRM_Template(PRM_TOGGLE,1, &names[13]),                                                     // enable Foam  // 13
 
@@ -202,9 +206,6 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
     setCurGdh(0, myGdpHandle);
     setupLocalVars();
 
-    // variable declarations
-    float now  = context.getTime();
-
     // Flag the SOP as being time dependent (i.e. cook on time changes)
     flags().setTimeDep(true);
 
@@ -245,7 +246,9 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
     enableEigens = (ENABLEEIGENS() != 0);
     if(pOcean->isChoppy() && enableEigens)
         enableEigens = TRUE;
-    now = now + TIMEOFFSET(now);
+    
+    // variable declarations
+    float now  = context.getTime();
 
     pOcean->input(  RESOLUTION(),
                     SPECTRUM(),
@@ -261,7 +264,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
                     WAVESPEED(now), 
                     WAVEHEIGHT(now),
                     CHOP(now), 
-                    now,
+                    TIME(now) + TIMEOFFSET(now),
                     LOOPTIME(now),
                     enableEigens,
                     RANDWEIGHT(now),

@@ -76,6 +76,7 @@ private:
     fpreal  WAVEHEIGHT(fpreal t)    { return evalFloat("waveHeight", 0, t); }
     fpreal  CHOP(fpreal t)          { return evalFloat("chop", 0, t); }
     int     ENABLEEIGENS()          { return evalInt("enableEigens", 0, 0); }
+    fpreal  TIME(fpreal t)          { return evalFloat("time", 0, t); }
     fpreal  TIMEOFFSET(fpreal t)    { return evalFloat("timeOffset", 0, t); }
     fpreal  LOOPTIME(fpreal t)      { return evalFloat("loopTime", 0, t); }
     fpreal  RANDWEIGHT(fpreal t)    { return evalFloat("randWeight", 0, t); }
