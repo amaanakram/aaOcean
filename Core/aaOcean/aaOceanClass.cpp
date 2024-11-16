@@ -747,10 +747,11 @@ void aaOcean::evaluateHokData()
         m_fftSpectrum[index] *= pow(k_dot_w, m_windAlign);  
 
         // eliminate wavelengths smaller than cutoff
-         m_fftSpectrum[index] *= exp(-k_sq * m_cutoff);     
+        m_fftSpectrum[index] *= exp(-k_sq * m_cutoff);     
 
         // swell
-        m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag); 
+        if (m_spectrum == 2)
+            m_fftSpectrum[index] = swell(m_fftSpectrum[index], k_dot_w, k_mag); 
 
        // reduce reflected waves
         if (bDamp && (k_dot_w < 0.0f))
@@ -800,11 +801,11 @@ void aaOcean::evaluateHieghtField()
         m_fft_htField[index].i = m_hktImag[index];
     }
     
-    timer.printElapsed("[aaOcean Core] Heightfield data prepared");
+    timer.printElapsed("[aaOcean Core] Heightfield data prepared", true);
 
     kiss_fftnd(m_planHeightField, m_fft_htField, m_fft_htField);
 
-    timer.printElapsed("[aaOcean Core] Heightfield FFT done");
+    timer.printElapsed("[aaOcean Core] Heightfield FFT done", true);
 
     for (size_t i = 0; i < n; ++i)
     {
