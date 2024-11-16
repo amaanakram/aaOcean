@@ -83,7 +83,7 @@ static PRM_Name names[] =
 
 // defining some custom ranges and defaults
 
-static PRM_Range        resolutionRange(PRM_RANGE_RESTRICTED, 1, PRM_RANGE_RESTRICTED, 6);
+static PRM_Range        resolutionRange(PRM_RANGE_RESTRICTED, 1, PRM_RANGE_RESTRICTED, 8);
 static PRM_Default      resolutionDefault(4);
 
 static PRM_Range        oceanScaleRange(PRM_RANGE_RESTRICTED, 0.0, PRM_RANGE_UI, 200.0);
