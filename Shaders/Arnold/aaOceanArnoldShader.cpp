@@ -71,7 +71,7 @@ node_parameters
     AiParameterVec ( "uv_coords"        , 1.0f, 1.0f, 1.0f);
     AiParameterBool( "use_uv_input"     , 0);
     AiParameterFlt ( "fade"             , 0.0f);
-    AiParameterInt ( "resolution"       , 4);
+    AiParameterStr ( "resolution"       , "256");
     AiParameterFlt ( "oceanScale"       , 100.0f);
     AiParameterFlt ( "oceanDepth"       , 10000.0f);
     AiParameterFlt ( "surfaceTension"   , 0.0f);
@@ -99,7 +99,7 @@ node_parameters
     AiParameterInt ( "currentFrame"     , 1);
     AiParameterBool( "rotateUV"         , 0);
     AiParameterMtx ( "transform"        , matrix44);
-    AiParameterInt ( "spectrum"         , 0);
+    AiParameterStr ( "spectrum"         , "Philips");
     AiParameterFlt ( "randWeight"       , 0.0f);
     AiParameterFlt ( "spectrumMult"     , 1.0f);
     AiParameterFlt ( "peakSharpening"   , 1.0f);
@@ -115,10 +115,27 @@ node_update
 
     float currentTime = AiNodeGetFlt(node, "time") + AiNodeGetFlt(node, "timeOffset");
 
+    int resolution = 4;
+    AtString resUI = AiNodeGetStr(node, "resolution");
+    if(     resUI ==  AtString("256")) resolution = 4;
+    else if(resUI ==  AtString("512")) resolution = 5;
+    else if(resUI == AtString("1024")) resolution = 6;
+    else if(resUI == AtString("2048")) resolution = 7;
+    else if(resUI == AtString("4096")) resolution = 8;
+    
+    int spectrum = 0;
+    AtString spectrumUI = AiNodeGetStr(node, "spectrum");
+    if(     spectrumUI == AtString("Philips"))            spectrum = 0;
+    else if(spectrumUI == AtString("Pierson-Morkowitz"))  spectrum = 1;
+    else if(spectrumUI == AtString("TMA"))                spectrum = 2;
+    else if(spectrumUI == AtString("JONSWAP"))            spectrum = 3;
+
+    std::cout << "resUI = " << resUI << ", resolved resolution = " << resolution << ", spectrum = " << spectrum << "\n";
+
     // main input function
     pOcean->input(
-        AiNodeGetInt(node, "resolution"),
-        AiNodeGetInt(node, "spectrum"), 
+        resolution,
+        spectrum, 
         AiNodeGetInt(node, "seed"),
         AiNodeGetFlt(node, "oceanScale"),
         AiNodeGetFlt(node, "oceanDepth"),

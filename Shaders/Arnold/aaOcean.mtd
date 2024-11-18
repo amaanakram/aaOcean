@@ -11,12 +11,16 @@ houdini.order STRING "folder1 "
 "writeFile outputFolder postfix currentFrame "
 
 [attr resolution]
-min INT 4
-max INT 8
+houdini.type STRING "menu:single:menu"
+default STRING "256"
+houdini.menu STRING "256;256x256;512;512x512;1024;1024x1024;2048;2048x2048;4096;4096x4096"
+linkable BOOL true
 
 [attr spectrum]
-min INT 0
-max INT 3
+houdini.type STRING "menu:single:menu"
+default STRING "Philips"
+houdini.menu STRING "Philips;Philips;Pierson-Morkowitz;Pierson-Morkowitz;TMA;TMA;JONSWAP;JONSWAP"
+linkable BOOL true
 
 [attr oceanScale]
 min FLOAT 0.001

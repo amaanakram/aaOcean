@@ -53,6 +53,18 @@ static PRM_Name spectrumNames[] =
 };
 static PRM_ChoiceList spectrumNamesMenu(PRM_CHOICELIST_SINGLE, spectrumNames);
 
+static PRM_Name resolutionList[] =
+{
+    PRM_Name("2", "64x64"),
+    PRM_Name("3", "128x128"),
+    PRM_Name("4", "256x256"),
+    PRM_Name("5", "512x512"),
+    PRM_Name("6", "1024x1024"),
+    PRM_Name("7", "2048x2048"),
+    PRM_Name(0)
+};
+static PRM_ChoiceList resolutionListMenu(PRM_CHOICELIST_SINGLE, resolutionList);
+
 static PRM_Name names[] = 
 {
     PRM_Name("resolution",      "Resolution"),
@@ -139,7 +151,8 @@ static PRM_Default	switcher[] = {
 
 PRM_Template aaOceanSOP::myTemplateList[] = 
 {   
-    PRM_Template(PRM_INT_E, 1, &names[0],  &resolutionDefault,  0, &resolutionRange),           // resolution   // 0
+    //PRM_Template(PRM_INT_E, 1, &names[0],  &resolutionDefault,  0, &resolutionRange),           // resolution   // 0
+    PRM_Template(PRM_ORD, PRM_Template::PRM_EXPORT_MAX, 1, &names[0],  0, &resolutionListMenu),   // resolution   // 0
     PRM_Template(PRM_ORD, PRM_Template::PRM_EXPORT_MAX, 1, &names[17], 0, &spectrumNamesMenu),  // spectrum type
     PRM_Template(PRM_FLT_J, 1, &names[2],  &oceanScaleDefault,  0, &oceanScaleRange),           // oceanScale   // 2
     PRM_Template(PRM_INT_E, 1, &names[1],  &seedDefault,        0, &seedRange),                 // seed         // 1
@@ -250,7 +263,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
     // variable declarations
     float now  = context.getTime();
 
-    pOcean->input(  RESOLUTION(),
+    pOcean->input(  RESOLUTION() + 2,
                     SPECTRUM(),
 					SEED(),
                     OCEANSCALE(now),
