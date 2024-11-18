@@ -38,7 +38,7 @@ aaOcean::aaOcean() :
     m_cutoff(-1.0f),
     m_damp(0.985f),
     m_oceanScale(100.0f),
-    m_oceanDepth(10000.f),
+    m_oceanDepth(10000.f),// forcing to be power of two, setting minimum resolution of 2^4
     m_surfaceTension(0.0f),
     m_chopAmount(1.0f),
     m_waveHeight(1.0f),
@@ -801,11 +801,11 @@ void aaOcean::evaluateHieghtField()
         m_fft_htField[index].i = m_hktImag[index];
     }
     
-    timer.printElapsed("[aaOcean Core] Heightfield data prepared", true);
+    timer.printElapsed("[aaOcean Core] Heightfield data prepared");
 
     kiss_fftnd(m_planHeightField, m_fft_htField, m_fft_htField);
 
-    timer.printElapsed("[aaOcean Core] Heightfield FFT done", true);
+    timer.printElapsed("[aaOcean Core] Heightfield FFT done");
 
     for (size_t i = 0; i < n; ++i)
     {
