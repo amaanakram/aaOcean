@@ -65,8 +65,18 @@ enum aaOceanParams
     p_swell
 };
 
+enum aaOceanOutputs
+{
+    p_displacementVecOut,
+    p_normalsVecOut,
+    p_eigenVectorPlusOut,
+    p_eigenVectorMinusOut,
+    p_eigenValuesOut,
+};
+
 node_parameters
 {
+
     AtMatrix matrix44 = AiM4Identity();
     AiParameterVec ( "uv_coords"        , 1.0f, 1.0f, 1.0f);
     AiParameterBool( "use_uv_input"     , 0);
@@ -105,6 +115,12 @@ node_parameters
     AiParameterFlt ( "peakSharpening"   , 1.0f);
     AiParameterFlt ( "jswpfetch"        , 100.0f);
     AiParameterFlt ( "swell"            , 0.0f);
+
+    AiOutputVec("displacementVecOut");
+    AiOutputVec("normalsVecOut");
+    AiOutputVec("eigenVectorPlusOut");
+    AiOutputVec("eigenVectorMinusOut");
+    AiOutputFlt("eigenValuesOut");
 }
 
 node_update
@@ -129,8 +145,6 @@ node_update
     else if(spectrumUI == AtString("Pierson-Morkowitz"))  spectrum = 1;
     else if(spectrumUI == AtString("TMA"))                spectrum = 2;
     else if(spectrumUI == AtString("JONSWAP"))            spectrum = 3;
-
-    std::cout << "resUI = " << resUI << ", resolved resolution = " << resolution << ", spectrum = " << spectrum << "\n";
 
     // main input function
     pOcean->input(
@@ -189,6 +203,91 @@ shader_evaluate
         uvPt.y = sg->v;
     }
 
+    switch (AiShaderGlobalsGetSelectedOutput(sg))
+    {
+        default:
+        {
+            AtVector worldSpaceDisplacementVec(0.0f, 0.0f, 0.0f);
+            worldSpaceDisplacementVec.y = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eHEIGHTFIELD);
+            if(pOcean->isChoppy())
+            {
+                // retrieve chop displacement
+                worldSpaceDisplacementVec.x = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eCHOPX);
+                worldSpaceDisplacementVec.z = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eCHOPZ);
+            }
+            
+            // convert to the local space of the user-specified transform matrix
+            AtMatrix transform_matrix = *AiShaderEvalParamMtx(p_transform);
+            AtVector oceanLocalSpace = AiM4PointByMatrixMult(transform_matrix, worldSpaceDisplacementVec);
+
+            // store result in output
+            sg->out.RGBA().r = oceanLocalSpace.x;
+            sg->out.RGBA().g = oceanLocalSpace.y;
+            sg->out.RGBA().b = oceanLocalSpace.z;
+            return;
+        }
+        case p_displacementVecOut:
+        {
+            AtVector worldSpaceDisplacementVec(0.0f, 0.0f, 0.0f);
+            worldSpaceDisplacementVec.y = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eHEIGHTFIELD);
+            if(pOcean->isChoppy())
+            {
+                // retrieve chop displacement
+                worldSpaceDisplacementVec.x = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eCHOPX);
+                worldSpaceDisplacementVec.z = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eCHOPZ);
+            }
+
+            // convert to the local space of the user-specified transform matrix
+            AtMatrix transform_matrix = *AiShaderEvalParamMtx(p_transform);
+            AtVector oceanLocalSpace = AiM4PointByMatrixMult(transform_matrix, worldSpaceDisplacementVec);
+
+            sg->out.VEC() = worldSpaceDisplacementVec; 
+
+            return;
+        }
+        case p_eigenVectorPlusOut:
+        {
+            sg->out.VEC().x = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eEIGENPLUSX);
+            sg->out.VEC().z = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eEIGENPLUSZ);
+            sg->out.VEC().y = 0.f;
+            return;
+        }
+        case p_eigenVectorMinusOut:
+        {
+            sg->out.VEC().x = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eEIGENMINUSX);
+            sg->out.VEC().z = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eEIGENMINUSZ);
+            sg->out.VEC().y = 0.f;
+            return;
+        }
+        case p_eigenValuesOut:
+        {
+            if(!pOcean->isChoppy())
+                return;
+
+            sg->out.FLT() = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eFOAM);
+            if(!AiShaderEvalParamBool(p_raw))
+            {
+                // get normalization weights
+                float   fmin = AiShaderEvalParamFlt(p_fMin);
+                float   fmax = AiShaderEvalParamFlt(p_fMax);
+                
+                // fitting to 0 - 1 range using rescale(...)
+                // invert result to put foam on wave peaks
+                if(AiShaderEvalParamBool(p_invertFoam))
+                    sg->out.FLT() = 1.0f - rescale(sg->out.FLT(), fmin, fmax, 0.0f, 1.0f);
+                else
+                    sg->out.FLT() = rescale(sg->out.FLT(), fmin, fmax, 0.0f, 1.0f);
+
+                // removing negative leftovers
+                sg->out.FLT() = std::max(sg->out.FLT(), aa_EPSILON);
+                // apply gamma
+                sg->out.FLT()  = pow(sg->out.FLT(), AiShaderEvalParamFlt(p_gamma));
+                sg->out.FLT() *= AiShaderEvalParamFlt(p_brightness);
+            }
+            return;
+        }
+    }
+
     // retrieve heightfield in world space
     AtVector worldSpaceDisplacementVec;
     worldSpaceDisplacementVec.y = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eHEIGHTFIELD);
@@ -203,25 +302,7 @@ shader_evaluate
         sg->out.RGBA().a = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eFOAM);
 
         // see if user has requested normalized or raw foam values
-        if(!AiShaderEvalParamBool(p_raw))
-        {
-            // get normalization weights
-            float   fmin = AiShaderEvalParamFlt(p_fMin);
-            float   fmax = AiShaderEvalParamFlt(p_fMax);
-            
-            // fitting to 0 - 1 range using rescale(...)
-            // invert result to put foam on wave peaks
-            if(AiShaderEvalParamBool(p_invertFoam))
-                sg->out.RGBA().a = 1.0f - rescale(sg->out.RGBA().a, fmin, fmax, 0.0f, 1.0f);
-            else
-                sg->out.RGBA().a = rescale(sg->out.RGBA().a, fmin, fmax, 0.0f, 1.0f);
-
-            // removing negative leftovers
-            sg->out.RGBA().a = maximum<float>(sg->out.RGBA().a, 0.0f);
-            // apply gamma
-            sg->out.RGBA().a = pow(sg->out.RGBA().a, AiShaderEvalParamFlt(p_gamma));
-            sg->out.RGBA().a *= AiShaderEvalParamFlt(p_brightness);
-        }
+        
     }
     else
     {
@@ -231,14 +312,7 @@ shader_evaluate
         sg->out.RGBA().a = 0.f;
     }
 
-    // convert to the local space of the user-specified transform matrix
-    AtMatrix transform_matrix = *AiShaderEvalParamMtx(p_transform);
-    AtVector oceanLocalSpace = AiM4PointByMatrixMult(transform_matrix, worldSpaceDisplacementVec);
-
-    // store result in output
-    sg->out.RGBA().r = oceanLocalSpace.x;
-    sg->out.RGBA().g = oceanLocalSpace.y;
-    sg->out.RGBA().b = oceanLocalSpace.z;
+    
 }
 
 node_initialize
@@ -283,7 +357,7 @@ node_loader
       return FALSE;
 
    node->methods      = aaOceanMethods;
-   node->output_type  = AI_TYPE_RGBA;
+   node->output_type  = AI_TYPE_RGB;
    node->name         = "aaOcean";
    node->node_type    = AI_NODE_SHADER;
    strcpy(node->version, AI_VERSION);
