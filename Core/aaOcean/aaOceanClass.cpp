@@ -317,23 +317,21 @@ void aaOcean::shaderEvaluate()
     const int nn = m_resolution * m_resolution;
     const int dims[2] = { m_resolution, m_resolution };
 
-    std::vector<float> hokReal;
-    std::vector<float> hokImag;
-    hokReal.resize(nn);
-    hokImag.resize(nn);
-
     m_fft_htField   = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
     m_out_fft_htField = (float*)malloc(nn * sizeof(float));
+    m_out_fft_chopX = (float*)malloc(nn * sizeof(float));
+    m_out_fft_chopZ = (float*)malloc(nn * sizeof(float));
     m_arrayPointer[eHEIGHTFIELD] = m_out_fft_htField;
+    m_arrayPointer[eCHOPX] = m_out_fft_chopX;
+    m_arrayPointer[eCHOPZ] = m_out_fft_chopZ;
+
+    float *hokReal = m_out_fft_chopX;   // temporary storage
+    float *hokImag = m_out_fft_chopZ;   // temporary storage
 
     if(m_doChop)
     {
         m_fft_chopX     = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
         m_fft_chopZ     = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
-        m_out_fft_chopX = (float*)malloc(nn * sizeof(float));
-        m_out_fft_chopZ = (float*)malloc(nn * sizeof(float));
-        m_arrayPointer[eCHOPX] = m_out_fft_chopX;
-        m_arrayPointer[eCHOPZ] = m_out_fft_chopZ;
     }
 
     // begin ocean spectrum build
@@ -507,9 +505,6 @@ void aaOcean::shaderEvaluate()
             }
         }
     }
-
-    std::vector<float>().swap(hokReal); // free memory
-    std::vector<float>().swap(hokImag); // free memory
 
     //blockTimer.printElapsed("FFT Prep done", true);
 
