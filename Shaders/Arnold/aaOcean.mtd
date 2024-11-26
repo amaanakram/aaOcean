@@ -1,5 +1,5 @@
 [node aaOcean]
-houdini.parm.folder.folder1 STRING "Ocean;6; Wave Params;3; Wind Params;4; TMA-Specific;3; Misc;7; UVs;4; Foam;6; OpenEXR Output;4;"
+houdini.parm.folder.folder1 STRING "Ocean;6; Wave Params;3; Wind Params;4; TMA-Specific;3; Misc;7; UVs;4; Foam;6; OpenEXR Output;4;Debug;1;"
 houdini.order STRING "folder1 "
 "resolution spectrum oceanScale seed time timeOffset "
 "waveHeight waveSpeed chopAmount "
@@ -9,6 +9,7 @@ houdini.order STRING "folder1 "
 "use_uv_input uv_coords uvAttribute rotateUV transform "
 "raw gamma brightness invertFoam fMin fMax "
 "writeFile outputFolder postfix currentFrame "
+"shaderMode "
 
 [attr resolution]
 houdini.type STRING "menu:single:menu"

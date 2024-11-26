@@ -91,6 +91,10 @@ public:
     // if choppiness is greater than 1, isChoppy() returns 1
     bool isChoppy();
 
+    // see if the ocean instance is in shader or deformer mode
+    bool isShader();
+    void setShaderMode(bool mode);
+
     // returns resolution in powers of 2
     int getResolution();
 
@@ -161,6 +165,7 @@ private:
     bool    m_doHoK;            // triggers evaluateHokData()
     bool    m_doChop;           // triggers evaluateChopField()
     bool    m_doFoam;           // triggers evaluateJacobians()
+    bool    m_isShader;         // for handling any differences between deformer vs. shader
 
     // memory tracking -- needs better implementation
     int     m_memory;
@@ -181,6 +186,7 @@ private:
     kiss_fftnd_cfg m_planJxz;
     kiss_fftnd_cfg m_planJzz;
 
+    void shaderEvaluate();
     void prepareOcean();
     void setupGrid();
     u_int32_t generateUID(const float, const float) const;
@@ -203,7 +209,7 @@ private:
 
     // memory management functions
     void allocateBaseArrays();
-    void allocateFoamArrays();
+    void allocateFoamArrays(bool allocatePlans = true);
     void clearArrays();
 };
 

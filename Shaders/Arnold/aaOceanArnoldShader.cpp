@@ -62,7 +62,8 @@ enum aaOceanParams
     p_spectrumMult,
     p_peakSharpening,
     p_jswpfetch,
-    p_swell
+    p_swell,
+    p_shaderMode
 };
 
 enum aaOceanOutputs
@@ -115,6 +116,7 @@ node_parameters
     AiParameterFlt ( "peakSharpening"   , 1.0f);
     AiParameterFlt ( "jswpfetch"        , 100.0f);
     AiParameterFlt ( "swell"            , 0.0f);
+    AiParameterBool( "shaderMode"       , true);
 
     AiOutputVec("displacementVecOut");
     AiOutputVec("normalsVecOut");
@@ -128,6 +130,11 @@ node_update
     Timer timer;
     // retrieve ocean pointer from user-data
     aaOcean *pOcean = reinterpret_cast<aaOcean*>(AiNodeGetLocalData(node));
+
+    if(AiNodeGetBool(node, "shaderMode")){
+        pOcean->setShaderMode(true);
+        AiMsgDebug("[aaOcean] Using Shader Mode");
+    }
 
     float currentTime = AiNodeGetFlt(node, "time") + AiNodeGetFlt(node, "timeOffset");
 
@@ -311,15 +318,13 @@ shader_evaluate
         worldSpaceDisplacementVec.x = worldSpaceDisplacementVec.z = 0.0f;
         sg->out.RGBA().a = 0.f;
     }
-
-    
 }
 
 node_initialize
 {
     // store a new ocean pointer in user-data
     aaOcean *pOcean;
-    pOcean = new aaOcean;
+    pOcean = new aaOcean;   
     AiNodeSetLocalData(node, pOcean);
     AiMsgInfo("[aaOcean Arnold] Created new aaOcean data");
 }

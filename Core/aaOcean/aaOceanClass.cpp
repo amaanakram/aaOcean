@@ -84,6 +84,7 @@ aaOcean::aaOcean() :
     m_doSetup(0),
     m_doChop(0),
     m_doFoam(0),
+    m_isShader(0),
 
     // memory tracking
     m_memory(0),
@@ -132,6 +133,16 @@ bool aaOcean::isChoppy()
     return m_doChop;
 }
 
+bool aaOcean::isShader()
+{
+    return m_isShader;
+}
+
+void aaOcean::setShaderMode(bool mode)
+{
+    m_isShader = mode;
+}
+
 char* aaOcean::getState()
 {
     return &m_state[0];
@@ -167,7 +178,7 @@ void aaOcean::input(
     float swell)
 {
     Timer timer;
-    
+
     // forcing to be power of two, setting minimum resolution of 2^4
     resolution = static_cast<int>(pow(2.0f, (4 + abs(resolution))));
     if (m_resolution != resolution)
@@ -176,7 +187,9 @@ void aaOcean::input(
         m_max_threads = omp_get_max_threads();
         if(m_resolution < 1024)
             m_max_threads = 1;
-        allocateBaseArrays();
+        
+        if(!m_isShader)
+            allocateBaseArrays();
     }
 
     // scaled for better UI control
@@ -252,6 +265,11 @@ void aaOcean::input(
         m_doSetup = m_doHoK = 1;
     }
 
+    if(m_isShader)
+    {
+        shaderEvaluate();
+        return;
+    }
 
     if (!m_doHoK || !m_doSetup){
         snprintf(m_state, sizeof(m_state), "[aaOcean Core] Ocean base state unchanged. Re-evaluating ocean with cached data");
@@ -288,6 +306,276 @@ void aaOcean::prepareOcean()
 
     snprintf(temp_buffer, sizeof(temp_buffer), "%s", m_state);
     snprintf(m_state, sizeof(m_state), "%s\n[aaOcean Core] Working memory allocated: %.2f megabytes", temp_buffer, float(m_memory) / 1048576.f);
+}
+
+void aaOcean::shaderEvaluate()
+{
+    Timer timer;
+    //Timer blockTimer;
+    const int n = m_resolution;
+    const int half_n = (-n / 2) - ((n - 1) / 2);
+    const int nn = m_resolution * m_resolution;
+    const int dims[2] = { m_resolution, m_resolution };
+
+    std::vector<float> hokReal;
+    std::vector<float> hokImag;
+    hokReal.resize(nn);
+    hokImag.resize(nn);
+
+    m_fft_htField   = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
+    m_out_fft_htField = (float*)malloc(nn * sizeof(float));
+    m_arrayPointer[eHEIGHTFIELD] = m_out_fft_htField;
+
+    if(m_doChop)
+    {
+        m_fft_chopX     = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
+        m_fft_chopZ     = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
+        m_out_fft_chopX = (float*)malloc(nn * sizeof(float));
+        m_out_fft_chopZ = (float*)malloc(nn * sizeof(float));
+        m_arrayPointer[eCHOPX] = m_out_fft_chopX;
+        m_arrayPointer[eCHOPZ] = m_out_fft_chopZ;
+    }
+
+    // begin ocean spectrum build
+    const float k_mult = aa_TWOPI / m_oceanScale;
+    const float windx = cos(m_windDir);
+    const float windz = sin(m_windDir);
+    const float omega0 = aa_TWOPI / m_loopTime;
+    const float signs[2] = { 1.0f, -1.0f };
+    bool bDamp = false;
+    if (m_damp > aa_EPSILON)
+        bDamp = true;
+
+    dsfmt_t dsfmt;
+    #pragma omp parallel for firstprivate(dsfmt) num_threads(m_max_threads)
+    for (int index = 0; index < nn; ++index)
+    {
+        unsigned int uID;
+        float rand1, rand2, omega, spectrum;
+
+        int i = index / n; // Calculate row index
+        int j = index % n; // Calculate column index
+
+        int xCoord = half_n + i * 2;
+        int zCoord = half_n + j * 2;
+        float x = static_cast<float>(xCoord);
+        float z = static_cast<float>(zCoord);
+        uID = static_cast<u_int32_t>(generateUID(x, z));
+        dsfmt_init_gen_rand(&dsfmt, uID + m_seed);
+
+        const float g1 = static_cast<float>(gaussian(dsfmt)); // gaussian rand draw 1
+        const float g2 = static_cast<float>(gaussian(dsfmt)); // gaussian rand draw 2
+
+        if (m_randWeight > aa_EPSILON)
+        {
+            const float u1 = static_cast<float>(uniform(dsfmt)); // uniform rand draw 1
+            const float u2 = static_cast<float>(uniform(dsfmt)); // uniform rand draw 2
+
+            rand1 = lerp(m_randWeight, g1, u1);
+            rand2 = lerp(m_randWeight, g2, u2);
+        }
+        else
+        {
+            rand1 = g1;
+            rand2 = g2;
+        }
+
+        float kX = (float)xCoord * k_mult;
+        float kZ = (float)zCoord * k_mult;
+        float k_sq = kX * kX + kZ * kZ;
+        float k_mag = sqrt(k_sq);
+
+        if (k_mag < aa_EPSILON)
+                spectrum = aa_EPSILON;
+
+        // calculate spectrum
+        if (m_spectrum == 1) // Pierson-Moskowitz
+        {
+            // build dispersion relationship with oceanDepth relationship and capillary waves
+            omega = sqrt(aa_GRAVITY * k_mag * tanh(k_mag * m_oceanDepth));
+            spectrum = piersonMoskowitz(omega, k_sq);
+
+        }
+        else if (m_spectrum == 2) //  Texel MARSEN ARSLOE (TMA) SpectruM
+        {
+            // build dispersion relationship with oceanDepth relationship and capillary waves
+            omega = sqrt(aa_GRAVITY * k_mag * tanh(k_mag * m_oceanDepth));
+            spectrum = tma(omega, index);
+        }
+        else if (m_spectrum == 3) //  JONSWAP
+        {
+            // Constants for the simulation
+            const float g = aa_GRAVITY;                     // Gravitational acceleration (m/s^2)
+            const float alpha = 0.0081f;                    // Empirical constant for wave growth
+            const float gamma = m_peakSharpening * 3.3f;    // Peak enhancement factor
+            const float sigma_low = 0.07f;                  // Sigma for f < f_peak
+            const float sigma_high = 0.09f;                 // Sigma for f > f_peak
+            const float wind_speed = m_velocity * 10.f;     // Wind speed at 10 meters above sea level (m/s)
+            const float fetch = m_jswpfetch * 100.f;        // Fetch distance in meters
+
+            const float f_peak = (3.5f * std::pow(g, 0.67f)) / (std::pow(wind_speed, 0.34f) * std::pow(fetch, 0.33f));
+            const float k_peak = 4.0f * aa_PI * aa_PI * f_peak * f_peak / g;
+            float sigma = (k_mag <= k_peak) ? sigma_low : sigma_high;
+            float S = alpha * g * g / std::pow(k_mag, 5.0f) * std::exp(-5.0f / 4.0f * std::pow(k_mag / k_peak, -4.0f));
+            float peak_factor = std::pow(gamma, std::exp(-std::pow((k_mag - k_peak), 2) / (2.0f * sigma * sigma * k_peak * k_peak)));
+
+            spectrum = std::sqrt(S * peak_factor / 2.0f) * m_spectrumMult * 0.01f;
+        }
+        else // Philips
+        { 
+            omega = aa_GRAVITY * k_mag * (1.0f + k_sq * m_surfaceTension * m_surfaceTension); // modifying dispersion for capillary waves
+            omega = sqrt(omega);
+            omega = (int(omega / omega0)) * omega0; // add time looping support with OmegaNought
+
+            spectrum = sqrt(philips(k_sq));
+        }
+
+        // bias towards wind dir
+        float k_dot_w = (kX * (1.0f / k_mag) * windx) + (kZ * (1.0f / k_mag) * windz);
+        spectrum *= pow(k_dot_w, m_windAlign);  
+
+        // eliminate wavelengths smaller than cutoff
+        spectrum *= exp(-k_sq * m_cutoff);     
+
+        // swell
+        if (m_spectrum == 2)
+            spectrum = swell(spectrum, k_dot_w, k_mag); 
+
+       // reduce reflected waves
+        if (bDamp && (k_dot_w < -aa_EPSILON))
+            spectrum *= (1.0f - m_damp);
+
+        m_fft_htField[index].r = omega;     // temporary storage
+        m_fft_htField[index].i = kX;        // temporary storage
+        m_out_fft_htField[index] = kZ;      // temporary storage
+
+        hokReal[index] = aa_INV_SQRTTWO * rand1 * spectrum; // store hokReal
+        hokImag[index] = aa_INV_SQRTTWO * rand2 * spectrum; // store hokImag
+    }
+
+    // prepare heightfield and chopfields for FFTs
+    if(m_doFoam)
+        allocateFoamArrays(false);
+        
+    const int n_sq_minus1 = n * n - 1;
+    #pragma omp parallel for num_threads(m_max_threads)
+    for (size_t index = 0; index < nn; ++index)
+    {
+        float omega = m_fft_htField[index].r;   // retrieve temp values
+        float kX = m_fft_htField[index].i;      // retrieve temp values
+        float kZ = m_out_fft_htField[index];    // retrieve temp values
+
+        size_t index_rev = n_sq_minus1 - index; //tail end 
+        float hokRealOpp = hokReal[index_rev];
+        float hokImagOpp = hokImag[index_rev];
+
+        float coswt = cos(omega * m_waveSpeed * m_time);
+        float sinwt = sin(omega * m_waveSpeed * m_time);
+
+        float hktReal =  (hokReal[index]    *  coswt) + (hokImag[index] * sinwt) +
+                         (hokRealOpp        *  coswt) - (hokImagOpp *  sinwt);  //complex conjugage
+
+        float hktImag  =  (-hokReal[index]   *  sinwt) + (hokImag[index] * coswt) +
+                          (hokRealOpp        *  sinwt) + (hokImagOpp *  coswt);  //complex conjugage
+
+        m_fft_htField[index].r = hktReal;
+        m_fft_htField[index].i = hktImag;
+
+        if(m_doChop)
+        {
+            float kMag = sqrt(kX * kX + kZ * kZ);
+            float kXZ = kX * kZ / kMag;
+            kX = kX / kMag;
+            kZ = kZ / kMag;
+
+            m_fft_chopX[index].r =  hktImag * kX;
+            m_fft_chopX[index].i = -hktReal * kX;
+
+            m_fft_chopZ[index].r =  hktImag * kZ;
+            m_fft_chopZ[index].i = -hktReal * kZ;
+
+            if(m_doFoam)
+            {
+                m_fft_jxx[index].r = hktReal * kX;
+                m_fft_jxx[index].i = hktImag * kX;
+
+                m_fft_jzz[index].r = hktReal * kZ;
+                m_fft_jzz[index].i = hktImag * kZ;
+
+                m_fft_jxz[index].r = hktReal * kXZ;
+                m_fft_jxz[index].i = hktImag * kXZ;
+            }
+        }
+    }
+
+    std::vector<float>().swap(hokReal); // free memory
+    std::vector<float>().swap(hokImag); // free memory
+
+    //blockTimer.printElapsed("FFT Prep done", true);
+
+    // Do the FFTs
+    m_planHeightField = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+    kiss_fftnd(m_planHeightField, m_fft_htField, m_fft_htField);
+    if(m_doChop)
+    {
+        kiss_fftnd(m_planHeightField, m_fft_chopX, m_fft_chopX);
+        kiss_fftnd(m_planHeightField, m_fft_chopZ, m_fft_chopZ);
+
+        if(m_doFoam)
+        {
+            kiss_fftnd(m_planHeightField, m_fft_jxx, m_fft_jxx);
+            kiss_fftnd(m_planHeightField, m_fft_jzz, m_fft_jzz);
+            kiss_fftnd(m_planHeightField, m_fft_jxz, m_fft_jxz);
+        }
+    }
+    free(m_planHeightField);
+    //blockTimer.printElapsed("FFTs done", true);
+
+    // process the FFT results
+    #pragma omp parallel for num_threads(m_max_threads)
+    for (size_t index = 0; index < nn; ++index)
+    {
+        size_t i = index / n;  // Row index
+        size_t j = index % n;  // Column index
+
+        m_out_fft_htField[index] = m_fft_htField[index].r * signs[(i + j) & 1] * m_waveHeight;
+
+        if(m_doChop)
+        {
+            float multiplier = -m_chopAmount * signs[(i + j) & 1];
+            m_out_fft_chopX[index] = m_fft_chopX[index].r * multiplier;
+            m_out_fft_chopZ[index] = m_fft_chopZ[index].r * multiplier;
+
+            if(m_doFoam)
+            {
+                float Jxx = m_fft_jxx[index].r * multiplier + 1.0f;
+                float Jzz = m_fft_jzz[index].r * multiplier + 1.0f;
+                float Jxz = m_fft_jxz[index].r * multiplier;
+
+                float temp = (0.5f * sqrt(((Jxx - Jzz) * (Jxx - Jzz)) + 4.0f * (Jxz*Jxz)));
+                float jPlus = (0.5f * (Jxx + Jzz)) + temp;
+                float jMinus = (0.5f * (Jxx + Jzz)) - temp;
+                float qPlus = (jPlus - Jxx) / Jxz;
+                float qMinus = (jMinus - Jxx) / Jxz;
+
+                temp = sqrt(1.0f + qPlus * qPlus);
+                m_out_fft_jxxX[index] = 1.0f / temp;
+                m_out_fft_jxxZ[index] = qPlus / temp;
+
+                temp = sqrt(1.0f + qMinus * qMinus);
+                m_out_fft_jzzX[index] = 1.0f / temp;
+                m_out_fft_jzzZ[index] = qMinus / temp;
+
+                //store foam back in this array for convenience
+                m_out_fft_jxz[index] = ((Jxx + Jzz) - sqrt(((Jxx - Jzz) * (Jxx - Jzz)) + 4.0f * (Jxz*Jxz))) * 0.5f;
+            }
+        }
+    }
+    //blockTimer.printElapsed("output prepared", true);
+
+    clearArrays();
+    snprintf(m_state, sizeof(m_state), "[aaOcean Shader] Generated ocean vector displacement at %dx%d resolution", m_resolution, m_resolution);
+    timer.printElapsed(m_state, true);
 }
 
 void aaOcean::allocateBaseArrays()
@@ -341,7 +629,7 @@ void aaOcean::allocateBaseArrays()
     m_isAllocated = 1;
 }
 
-void aaOcean::allocateFoamArrays()
+void aaOcean::allocateFoamArrays(bool allocatePlans)
 {
     int size = m_resolution * m_resolution;
     int dims[2] = { m_resolution, m_resolution };
@@ -357,9 +645,12 @@ void aaOcean::allocateFoamArrays()
     m_out_fft_jzzZ = (float*)malloc(size * sizeof(float));
     m_out_fft_jxz = (float*)malloc(size * sizeof(float));
 
-    m_planJxx = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-    m_planJxz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-    m_planJzz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+    if(allocatePlans)
+    {
+        m_planJxx = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+        m_planJxz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+        m_planJzz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+    }
 
     m_arrayPointer[eFOAM] = m_out_fft_jxz;
     m_arrayPointer[eEIGENPLUSX] = m_out_fft_jxxX;
@@ -939,6 +1230,7 @@ void aaOcean::evaluateJacobians()
 
     timer.printElapsed("[aaOcean Core] Jacobians Foam completed");
 }
+
 
 void aaOcean::getFoamBounds(float& outBoundsMin, float& outBoundsMax) const
 {
