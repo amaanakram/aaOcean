@@ -125,7 +125,10 @@ aaOcean::aaOcean(const aaOcean &cpy)
 
 aaOcean::~aaOcean()
 {
-    clearArrays();
+    if(m_isShader)
+        clearShaderArrays(true);
+    else
+        clearArrays();
 }
 
 bool aaOcean::isChoppy()
@@ -523,7 +526,6 @@ void aaOcean::shaderEvaluate()
             kiss_fftnd(m_planHeightField, m_fft_jxz, m_fft_jxz);
         }
     }
-    free(m_planHeightField);
     //blockTimer.printElapsed("FFTs done", true);
 
     // process the FFT results
@@ -568,9 +570,55 @@ void aaOcean::shaderEvaluate()
     }
     //blockTimer.printElapsed("output prepared", true);
 
-    clearArrays();
-    snprintf(m_state, sizeof(m_state), "[aaOcean Shader] Generated ocean vector displacement at %dx%d resolution", m_resolution, m_resolution);
-    timer.printElapsed(m_state, true);
+    bool clearAllArrays = false;
+    clearShaderArrays(clearAllArrays);
+
+    m_isAllocated = 1;
+    snprintf(m_state, sizeof(m_state), "[aaOcean Shader] Generated ocean vector displacement at %dx%d resolution, spectrum: %d", m_resolution, m_resolution, m_spectrum);
+    timer.printElapsed(m_state);
+}
+
+void aaOcean::clearShaderArrays(bool clearAll)
+{
+    if(m_fft_htField)
+	    free(m_fft_htField);
+    if(m_fft_chopX)
+        free(m_fft_chopX);
+    if(m_fft_chopZ)
+        free(m_fft_chopZ);
+    if(m_planHeightField)
+        free(m_planHeightField);
+    if(m_fft_jxx)
+        free(m_fft_jxx);
+    if(m_fft_jzz)
+        free(m_fft_jzz);
+    if(m_fft_jxz)
+        free(m_fft_jxz);
+
+    m_fft_htField = m_fft_chopX = m_fft_chopZ = m_fft_jxz = m_fft_jzz = m_fft_jxx = nullptr;
+    m_planHeightField = nullptr;
+
+    if(clearAll)
+    {
+        if(m_out_fft_htField)
+            free(m_out_fft_htField);
+        if(m_out_fft_chopX)
+            free(m_out_fft_chopX);
+        if(m_out_fft_chopZ)
+            free(m_out_fft_chopZ);
+        if(m_out_fft_jxxX)
+            free(m_out_fft_jxxX);
+        if(m_out_fft_jxxZ)
+            free(m_out_fft_jxxZ);
+        if(m_out_fft_jzzX)
+            free(m_out_fft_jzzX);
+        if(m_out_fft_jzzZ)
+            free(m_out_fft_jzzZ);
+        if(m_out_fft_jxz)
+            free(m_out_fft_jxz);
+
+        m_out_fft_htField = m_out_fft_chopX = m_out_fft_chopZ = m_out_fft_jxxX = m_out_fft_jxxZ = m_out_fft_jzzX = m_out_fft_jzzZ = m_out_fft_jxz = nullptr;
+    }
 }
 
 void aaOcean::allocateBaseArrays()

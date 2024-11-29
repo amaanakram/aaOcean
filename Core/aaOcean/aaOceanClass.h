@@ -210,6 +210,7 @@ private:
     // memory management functions
     void allocateBaseArrays();
     void allocateFoamArrays(bool allocatePlans = true);
+    void clearShaderArrays(bool clearAll = false);
     void clearArrays();
 };
 
