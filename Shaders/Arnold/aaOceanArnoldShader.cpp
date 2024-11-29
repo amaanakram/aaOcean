@@ -192,7 +192,9 @@ node_update
             AiMsgWarning("[aaOcean Shader] Foam Min/Max mismatch. Please set the Foam Min/Max values in foam shader to Min: %f, Max: %f", 
                         outMin, outMax);
     }
-    timer.printElapsed("[aaOcean Shader] node_update finished");
+    char msg[512];
+    snprintf(msg, sizeof(msg), "[aaOcean Shader] Generated %s ocean vector displacement at %sx%s resolution", spectrumUI, resUI, resUI);
+    timer.printElapsed(msg, true);
 }
 
 shader_evaluate
@@ -294,30 +296,6 @@ shader_evaluate
             return;
         }
     }
-
-    // retrieve heightfield in world space
-    AtVector worldSpaceDisplacementVec;
-    worldSpaceDisplacementVec.y = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eHEIGHTFIELD);
-
-    if(pOcean->isChoppy())
-    {
-        // retrieve chop displacement
-        worldSpaceDisplacementVec.x = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eCHOPX);
-        worldSpaceDisplacementVec.z = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eCHOPZ);
-
-        // retrieve foam and store it in our alpha channel
-        sg->out.RGBA().a = pOcean->getOceanData(uvPt.x, uvPt.y, aaOcean::eFOAM);
-
-        // see if user has requested normalized or raw foam values
-        
-    }
-    else
-    {
-        // return only heightfield, since ocean isn't choppy, 
-        // and set foam to 0.0 since it is derived from choppy oceans
-        worldSpaceDisplacementVec.x = worldSpaceDisplacementVec.z = 0.0f;
-        sg->out.RGBA().a = 0.f;
-    }
 }
 
 node_initialize
@@ -326,7 +304,6 @@ node_initialize
     aaOcean *pOcean;
     pOcean = new aaOcean;   
     AiNodeSetLocalData(node, pOcean);
-    AiMsgInfo("[aaOcean Arnold] Created new aaOcean data");
 }
 
 node_finish
