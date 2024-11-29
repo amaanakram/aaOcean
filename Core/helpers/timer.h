@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include "ai.h"
 
 class Timer {
 public:
@@ -36,8 +37,7 @@ public:
         oss << message << ". Elapsed time: " << milliseconds << " ms (" << seconds << " seconds)";
 
         if (log) 
-            std::cout << oss.str() << "\n";
-        //return oss.str();
+            AiMsgInfo(oss.str().c_str());
     }
 
 private:
