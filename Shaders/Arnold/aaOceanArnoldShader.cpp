@@ -94,7 +94,7 @@ node_parameters
     AiParameterFlt ( "cutoff"           , 0.0f);
     AiParameterFlt ( "windDir"          , 45.0f);
     AiParameterFlt ( "damp"             , 0.985f);
-    AiParameterInt ( "windAlign"        , 0);
+    AiParameterInt ( "windAlign"        , 1);
     AiParameterFlt ( "time"             , 0.1f);
     AiParameterFlt ( "timeOffset"       , 0.0f);
     AiParameterFlt ( "repeatTime"       , 1000.f);
