@@ -314,16 +314,17 @@ void aaOcean::prepareOcean()
 void aaOcean::shaderEvaluate()
 {
     Timer timer;
-    //Timer blockTimer;
     const int n = m_resolution;
     const int half_n = (-n / 2) - ((n - 1) / 2);
     const int nn = m_resolution * m_resolution;
     const int dims[2] = { m_resolution, m_resolution };
 
     m_fft_htField   = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
+    m_memory += nn * sizeof(kiss_fft_cpx);
     m_out_fft_htField = (float*)malloc(nn * sizeof(float));
     m_out_fft_chopX = (float*)malloc(nn * sizeof(float));
     m_out_fft_chopZ = (float*)malloc(nn * sizeof(float));
+    m_memory += nn * sizeof(float) * 3;
     m_arrayPointer[eHEIGHTFIELD] = m_out_fft_htField;
     m_arrayPointer[eCHOPX] = m_out_fft_chopX;
     m_arrayPointer[eCHOPZ] = m_out_fft_chopZ;
@@ -335,6 +336,7 @@ void aaOcean::shaderEvaluate()
     {
         m_fft_chopX     = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
         m_fft_chopZ     = (kiss_fft_cpx *)malloc(nn * sizeof(kiss_fft_cpx));
+        m_memory        += nn * sizeof(kiss_fft_cpx) * 2;
     }
 
     // begin ocean spectrum build
@@ -477,7 +479,7 @@ void aaOcean::shaderEvaluate()
                          (hokRealOpp        *  coswt) - (hokImagOpp *  sinwt);  //complex conjugage
 
         float hktImag  =  (-hokReal[index]   *  sinwt) + (hokImag[index] * coswt) +
-                          (hokRealOpp        *  sinwt) + (hokImagOpp *  coswt);  //complex conjugage
+                         (hokRealOpp        *  sinwt) + (hokImagOpp *  coswt);  //complex conjugage
 
         m_fft_htField[index].r = hktReal;
         m_fft_htField[index].i = hktImag;
@@ -509,7 +511,9 @@ void aaOcean::shaderEvaluate()
         }
     }
 
-    //blockTimer.printElapsed("FFT Prep done", true);
+    size_t mem_needed = 0;
+    kiss_fftnd_alloc(dims, 2, 1, NULL, &mem_needed); // Calculate the memory requirement without allocating
+    m_memory += mem_needed;
 
     // Do the FFTs
     m_planHeightField = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
@@ -526,7 +530,6 @@ void aaOcean::shaderEvaluate()
             kiss_fftnd(m_planHeightField, m_fft_jxz, m_fft_jxz);
         }
     }
-    //blockTimer.printElapsed("FFTs done", true);
 
     // process the FFT results
     #pragma omp parallel for num_threads(m_max_threads)
@@ -568,7 +571,6 @@ void aaOcean::shaderEvaluate()
             }
         }
     }
-    //blockTimer.printElapsed("output prepared", true);
 
     bool clearAllArrays = false;
     clearShaderArrays(clearAllArrays);
@@ -634,14 +636,14 @@ void aaOcean::allocateBaseArrays()
     int size = m_resolution * m_resolution;
     int dims[2] = { m_resolution, m_resolution };
 
-    m_memory = size * sizeof(int) * 2 + size * sizeof(float) * 9 + size * sizeof(kiss_fft_cpx) * 3;
-
     m_fft_htField = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
     m_fft_chopX = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
     m_fft_chopZ = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
+    m_memory += size * sizeof(kiss_fft_cpx) * 3;
 
     m_xCoord = (int*)malloc(size * sizeof(int));
     m_zCoord = (int*)malloc(size * sizeof(int));
+    m_memory += size * sizeof(int) * 2;
 
     m_hokReal = (float*)malloc(size * sizeof(float));
     m_hokImag = (float*)malloc(size * sizeof(float));
@@ -653,11 +655,16 @@ void aaOcean::allocateBaseArrays()
     m_rand1 = (float*)malloc(size * sizeof(float));
     m_rand2 = (float*)malloc(size * sizeof(float));
     m_fftSpectrum = (float*)malloc(size * sizeof(float));
+    m_memory += size * sizeof(float) * 10;
 
     m_out_fft_htField = (float*)malloc(size * sizeof(float));
     m_out_fft_chopX = (float*)malloc(size * sizeof(float));
     m_out_fft_chopZ = (float*)malloc(size * sizeof(float));
+    m_memory += size * sizeof(float) * 3;
 
+    size_t mem_needed = 0;
+    kiss_fftnd_alloc(dims, 2, 1, NULL, &mem_needed); // Calculate the memory requirement without allocating
+    m_memory += mem_needed;
     m_planHeightField = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
     m_planChopX = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
     m_planChopZ = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
@@ -676,23 +683,28 @@ void aaOcean::allocateFoamArrays(bool allocatePlans)
 {
     int size = m_resolution * m_resolution;
     int dims[2] = { m_resolution, m_resolution };
-    m_memory += size * sizeof(kiss_fft_cpx) * 3;
 
     m_fft_jxx = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
     m_fft_jzz = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
     m_fft_jxz = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
+    m_memory += size * sizeof(kiss_fft_cpx) * 3;
 
     m_out_fft_jxxX = (float*)malloc(size * sizeof(float));
     m_out_fft_jxxZ = (float*)malloc(size * sizeof(float));
     m_out_fft_jzzX = (float*)malloc(size * sizeof(float));
     m_out_fft_jzzZ = (float*)malloc(size * sizeof(float));
     m_out_fft_jxz = (float*)malloc(size * sizeof(float));
+    m_memory += size * sizeof(float) * 5;
 
     if(allocatePlans)
     {
+        size_t mem_needed = 0;
+        kiss_fftnd_alloc(dims, 2, 1, NULL, &mem_needed); // Calculate the memory requirement without allocating
+
         m_planJxx = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
         m_planJxz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
         m_planJzz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+        m_memory += mem_needed * 3;
     }
 
     m_arrayPointer[eFOAM] = m_out_fft_jxz;
@@ -1382,6 +1394,11 @@ inline int aaOcean::wrap(int x) const
     // fast modulo for power of 2 numbers
     x = x & (m_resolution - 1);
     return x;
+}
+
+size_t aaOcean::getMemory()
+{
+    return m_memory;
 }
 
 #endif  /* AAOCEANCLASS_CPP */

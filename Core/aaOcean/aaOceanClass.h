@@ -102,6 +102,9 @@ public:
     // Needs better implementation
     char* getState();
 
+    // returns current memory usage
+    size_t getMemory();
+
     // initialization functions
 private:
     int     m_resolution;     // resolution in powers of 2
@@ -168,7 +171,7 @@ private:
     bool    m_isShader;         // for handling any differences between deformer vs. shader
 
     // memory tracking -- needs better implementation
-    int     m_memory;
+    size_t  m_memory;
     int     m_max_threads;
 
     // kissfft arrays

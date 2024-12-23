@@ -193,8 +193,12 @@ node_update
             AiMsgWarning("[aaOcean Shader] Foam Min/Max mismatch. Please set the Foam Min/Max values in foam shader to Min: %f, Max: %f", 
                         outMin, outMax);
     }
+
+    float mem_used = (float)pOcean->getMemory()/(1024.f * 1024.f); // size in MB
+    AiAddMemUsage(pOcean->getMemory(), AtString("aaOcean"));
+
     char msg[512];
-    snprintf(msg, sizeof(msg), "[aaOcean Shader] Generated %s ocean vector displacement at %sx%s resolution", spectrumUI, resUI, resUI);
+    snprintf(msg, sizeof(msg), "[aaOcean Shader] Generated %s ocean vector displacement at %sx%s resolution, using %.1f MBs memory", spectrumUI, resUI, resUI, mem_used);
     timer.printElapsed(msg, true);
 }
 
