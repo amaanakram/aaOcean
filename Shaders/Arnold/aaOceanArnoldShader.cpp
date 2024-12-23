@@ -204,6 +204,24 @@ node_update
     char msg[512];
     snprintf(msg, sizeof(msg), "[aaOcean Shader] Generated %s ocean vector displacement at %sx%s resolution, using %.1f MBs memory", spectrumUI, resUI, resUI, mem_used);
     timer.printElapsed(msg, true);
+
+    #ifdef WRITE_OPENEXR
+    if(AiNodeGetBool(node, "writeFile"))
+    {
+        const char *outputFolder = AiNodeGetStr(node, "outputFolder");
+        if(!dirExists(outputFolder))
+            AiMsgWarning("[aaOcean] Invalid folder path: %s", outputFolder);
+        else
+        {
+            char outputFileName[255];
+            sprintf(outputFileName, "none");
+            const char* postfix = AiNodeGetStr(node, "postfix");
+            int frame = AiNodeGetInt(node, "currentFrame");
+            oceanDataToEXR(pOcean,&outputFolder[0], &postfix[0], frame, &outputFileName[0]);
+            AiMsgInfo("[aaOcean Arnold] Image written to %s", outputFileName);
+        }
+    }
+    #endif
 }
 
 shader_evaluate
@@ -318,25 +336,7 @@ node_initialize
 node_finish
 {
     // retrieve ocean pointer from user-data
-     aaOcean* pOcean = reinterpret_cast<aaOcean*>(AiNodeGetLocalData(node));
-    
-    #ifdef WRITE_OPENEXR
-    if(AiNodeGetBool(node, "writeFile"))
-    {
-        const char *outputFolder = AiNodeGetStr(node, "outputFolder");
-        if(!dirExists(outputFolder))
-            AiMsgWarning("[aaOcean] Invalid folder path: %s", outputFolder);
-        else
-        {
-            char outputFileName[255];
-            sprintf(outputFileName, "none");
-            const char* postfix = AiNodeGetStr(node, "postfix");
-            int frame = AiNodeGetInt(node, "currentFrame");
-            oceanDataToEXR(pOcean,&outputFolder[0], &postfix[0], frame, &outputFileName[0]);
-            AiMsgInfo("[aaOcean Arnold] Image written to %s", outputFileName);
-        }
-    }
-    #endif
+     aaOcean* pOcean = reinterpret_cast<aaOcean*>(AiNodeGetLocalData(node));    
     // cleanup ocean
     delete pOcean;
     AiMsgInfo("[aaOcean Arnold] Deleted aaOcean data");
