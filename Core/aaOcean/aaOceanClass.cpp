@@ -459,7 +459,7 @@ void aaOcean::shaderEvaluate()
 
     // prepare heightfield and chopfields for FFTs
     if(m_doFoam)
-        allocateFoamArrays(false);
+        allocateFoamArrays();
         
     const int n_sq_minus1 = n * n - 1;
     #pragma omp parallel for num_threads(m_max_threads)
@@ -517,18 +517,18 @@ void aaOcean::shaderEvaluate()
     m_memory += mem_needed;
 
     // Do the FFTs
-    m_planHeightField = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-    kiss_fftnd(m_planHeightField, m_fft_htField, m_fft_htField);
+    m_fft_plan = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+    kiss_fftnd(m_fft_plan, m_fft_htField, m_fft_htField);
     if(m_doChop)
     {
-        kiss_fftnd(m_planHeightField, m_fft_chopX, m_fft_chopX);
-        kiss_fftnd(m_planHeightField, m_fft_chopZ, m_fft_chopZ);
+        kiss_fftnd(m_fft_plan, m_fft_chopX, m_fft_chopX);
+        kiss_fftnd(m_fft_plan, m_fft_chopZ, m_fft_chopZ);
 
         if(m_doFoam)
         {
-            kiss_fftnd(m_planHeightField, m_fft_jxx, m_fft_jxx);
-            kiss_fftnd(m_planHeightField, m_fft_jzz, m_fft_jzz);
-            kiss_fftnd(m_planHeightField, m_fft_jxz, m_fft_jxz);
+            kiss_fftnd(m_fft_plan, m_fft_jxx, m_fft_jxx);
+            kiss_fftnd(m_fft_plan, m_fft_jzz, m_fft_jzz);
+            kiss_fftnd(m_fft_plan, m_fft_jxz, m_fft_jxz);
         }
     }
 
@@ -589,8 +589,8 @@ void aaOcean::clearShaderArrays(bool clearAll)
         free(m_fft_chopX);
     if(m_fft_chopZ)
         free(m_fft_chopZ);
-    if(m_planHeightField)
-        free(m_planHeightField);
+    if(m_fft_plan)
+        free(m_fft_plan);
     if(m_fft_jxx)
         free(m_fft_jxx);
     if(m_fft_jzz)
@@ -599,7 +599,7 @@ void aaOcean::clearShaderArrays(bool clearAll)
         free(m_fft_jxz);
 
     m_fft_htField = m_fft_chopX = m_fft_chopZ = m_fft_jxz = m_fft_jzz = m_fft_jxx = nullptr;
-    m_planHeightField = nullptr;
+    m_fft_plan = nullptr;
 
     if(clearAll)
     {
@@ -667,9 +667,7 @@ void aaOcean::allocateBaseArrays()
     size_t mem_needed = 0;
     kiss_fftnd_alloc(dims, 2, 1, NULL, &mem_needed); // Calculate the memory requirement without allocating
     m_memory += mem_needed;
-    m_planHeightField = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-    m_planChopX = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-    m_planChopZ = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
+    m_fft_plan = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
 
     m_arrayPointer[eHEIGHTFIELD] = m_out_fft_htField;
     m_arrayPointer[eCHOPX] = m_out_fft_chopX;
@@ -681,10 +679,9 @@ void aaOcean::allocateBaseArrays()
     m_isAllocated = 1;
 }
 
-void aaOcean::allocateFoamArrays(bool allocatePlans)
+void aaOcean::allocateFoamArrays()
 {
     int size = m_resolution * m_resolution;
-    int dims[2] = { m_resolution, m_resolution };
 
     m_fft_jxx = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
     m_fft_jzz = (kiss_fft_cpx *)malloc(size * sizeof(kiss_fft_cpx));
@@ -697,17 +694,6 @@ void aaOcean::allocateFoamArrays(bool allocatePlans)
     m_out_fft_jzzZ = (float*)malloc(size * sizeof(float));
     m_out_fft_jxz = (float*)malloc(size * sizeof(float));
     m_memory += size * sizeof(float) * 5;
-
-    if(allocatePlans)
-    {
-        size_t mem_needed = 0;
-        kiss_fftnd_alloc(dims, 2, 1, NULL, &mem_needed); // Calculate the memory requirement without allocating
-
-        m_planJxx = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-        m_planJxz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-        m_planJzz = kiss_fftnd_alloc(dims, 2, 1, 0, 0);
-        m_memory += mem_needed * 3;
-    }
 
     m_arrayPointer[eFOAM] = m_out_fft_jxz;
     m_arrayPointer[eEIGENPLUSX] = m_out_fft_jxxX;
@@ -813,7 +799,6 @@ void aaOcean::clearArrays()
                 free(m_fft_jxx);
                 free(m_out_fft_jxxX);
                 free(m_out_fft_jxxZ);
-                free(m_planJxx);
                 m_out_fft_jxxZ = m_out_fft_jxxX = 0;
                 m_fft_jxx = 0;
             }
@@ -822,7 +807,6 @@ void aaOcean::clearArrays()
                 free(m_fft_jzz);
                 free(m_out_fft_jzzX);
                 free(m_out_fft_jzzZ);
-                free(m_planJzz);
                 m_out_fft_jzzX = m_out_fft_jzzZ = 0;
                 m_fft_jzz = 0;
             }
@@ -830,7 +814,6 @@ void aaOcean::clearArrays()
             {
                 free(m_fft_jxz);
                 free(m_out_fft_jxz);
-                free(m_planJxz);
                 m_out_fft_jxz = 0;
                 m_fft_jxz = 0;
             }
@@ -840,7 +823,6 @@ void aaOcean::clearArrays()
         {
             free(m_fft_chopZ);
             free(m_out_fft_chopZ);
-            free(m_planChopZ);
             m_out_fft_chopZ = 0;
             m_fft_chopZ = 0;
         }
@@ -848,7 +830,6 @@ void aaOcean::clearArrays()
         {
             free(m_fft_chopX);
             free(m_out_fft_chopX);
-            free(m_planChopX);
             m_out_fft_chopX = 0;
             m_fft_chopX = 0;
         }
@@ -856,7 +837,7 @@ void aaOcean::clearArrays()
         {
             free(m_fft_htField);
             free(m_out_fft_htField);
-            free(m_planHeightField);
+            free(m_fft_plan);
             m_out_fft_htField = 0;
             m_fft_htField = 0;
         }
@@ -1151,7 +1132,7 @@ void aaOcean::evaluateHieghtField()
     
     timer.printElapsed("[aaOcean Core] Heightfield data prepared");
 
-    kiss_fftnd(m_planHeightField, m_fft_htField, m_fft_htField);
+    kiss_fftnd(m_fft_plan, m_fft_htField, m_fft_htField);
 
     timer.printElapsed("[aaOcean Core] Heightfield FFT done");
 
@@ -1186,8 +1167,8 @@ void aaOcean::evaluateChopField()
 
     timer.printElapsed("[aaOcean Core] chopfield prepared");
 
-    kiss_fftnd(m_planChopX, m_fft_chopX, m_fft_chopX);
-    kiss_fftnd(m_planChopZ, m_fft_chopZ, m_fft_chopZ);
+    kiss_fftnd(m_fft_plan, m_fft_chopX, m_fft_chopX);
+    kiss_fftnd(m_fft_plan, m_fft_chopZ, m_fft_chopZ);
 
     timer.printElapsed("[aaOcean Core] chopfield fft done");
 
@@ -1234,9 +1215,9 @@ void aaOcean::evaluateJacobians()
     }
     timer.printElapsed("[aaOcean Core] Jacobians setup complete");
 
-    kiss_fftnd(m_planJxx, m_fft_jxx, m_fft_jxx);
-    kiss_fftnd(m_planJzz, m_fft_jzz, m_fft_jzz);
-    kiss_fftnd(m_planJxz, m_fft_jxz, m_fft_jxz);
+    kiss_fftnd(m_fft_plan, m_fft_jxx, m_fft_jxx);
+    kiss_fftnd(m_fft_plan, m_fft_jzz, m_fft_jzz);
+    kiss_fftnd(m_fft_plan, m_fft_jxz, m_fft_jxz);
 
     timer.printElapsed("[aaOcean Core] Jacobians FFT done");
 
@@ -1287,7 +1268,6 @@ void aaOcean::evaluateJacobians()
 
     timer.printElapsed("[aaOcean Core] Jacobians Foam completed");
 }
-
 
 void aaOcean::getFoamBounds(float& outBoundsMin, float& outBoundsMax) const
 {

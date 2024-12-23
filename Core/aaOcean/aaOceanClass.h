@@ -182,12 +182,7 @@ private:
     kiss_fft_cpx *m_fft_jzz; // eigenvector
     kiss_fft_cpx *m_fft_jxz; // eigenvalue
 
-    kiss_fftnd_cfg m_planHeightField;
-    kiss_fftnd_cfg m_planChopX;
-    kiss_fftnd_cfg m_planChopZ;
-    kiss_fftnd_cfg m_planJxx;
-    kiss_fftnd_cfg m_planJxz;
-    kiss_fftnd_cfg m_planJzz;
+    kiss_fftnd_cfg m_fft_plan;
 
     void shaderEvaluate();
     void prepareOcean();
@@ -212,7 +207,7 @@ private:
 
     // memory management functions
     void allocateBaseArrays();
-    void allocateFoamArrays(bool allocatePlans = true);
+    void allocateFoamArrays();
     void clearShaderArrays(bool clearAll = false);
     void clearArrays();
 };
