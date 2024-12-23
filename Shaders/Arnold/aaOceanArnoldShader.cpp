@@ -13,6 +13,7 @@
 // license.txt file that is part of the aaOcean repository:
 // https://github.com/amaanakram/aaOcean
 
+#define ARNOLD_SHADER 1
 #include <limits>
 #include <string>
 #include "ai.h"
