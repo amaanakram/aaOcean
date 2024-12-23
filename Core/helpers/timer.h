@@ -5,7 +5,9 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#ifdef ARNOLD_SHADER
 #include "ai.h"
+#endif
 
 class Timer {
 public:
@@ -36,8 +38,14 @@ public:
         oss << std::fixed << std::setprecision(2);
         oss << message << ". Elapsed time: " << milliseconds << " ms (" << seconds << " seconds)";
 
-        if (log) 
+        if (log)
+        {
+            #ifdef ARNOLD_SHADER
             AiMsgInfo(oss.str().c_str());
+            #else
+            std::cout << oss.str() << "\n";
+            #endif
+        }
     }
 
 private:
