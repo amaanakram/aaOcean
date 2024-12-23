@@ -314,6 +314,7 @@ void aaOcean::prepareOcean()
 void aaOcean::shaderEvaluate()
 {
     Timer timer;
+    m_memory = 0;
     const int n = m_resolution;
     const int half_n = (-n / 2) - ((n - 1) / 2);
     const int nn = m_resolution * m_resolution;
@@ -633,6 +634,7 @@ void aaOcean::allocateBaseArrays()
     else
         snprintf(m_state, sizeof(m_state), "[aaOcean Core] Allocating memory for ocean data structures for resolution %dx%d", m_resolution, m_resolution);
 
+    m_memory = 0;
     int size = m_resolution * m_resolution;
     int dims[2] = { m_resolution, m_resolution };
 

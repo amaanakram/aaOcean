@@ -132,6 +132,10 @@ node_update
     // retrieve ocean pointer from user-data
     aaOcean *pOcean = reinterpret_cast<aaOcean*>(AiNodeGetLocalData(node));
 
+    float mem_used = (float)pOcean->getMemory(); // in bytes
+    if (mem_used > 0.f)
+        AiAddMemUsage(-pOcean->getMemory(), AtString("aaOcean")); // update previous session's memory footprint
+
     if(AiNodeGetBool(node, "shaderMode")){
         pOcean->setShaderMode(true);
         AiMsgDebug("[aaOcean] Using Shader Mode");
@@ -194,8 +198,8 @@ node_update
                         outMin, outMax);
     }
 
-    float mem_used = (float)pOcean->getMemory()/(1024.f * 1024.f); // size in MB
     AiAddMemUsage(pOcean->getMemory(), AtString("aaOcean"));
+    mem_used = (float)pOcean->getMemory()/(1024.f * 1024.f); // size in MB
 
     char msg[512];
     snprintf(msg, sizeof(msg), "[aaOcean Shader] Generated %s ocean vector displacement at %sx%s resolution, using %.1f MBs memory", spectrumUI, resUI, resUI, mem_used);
