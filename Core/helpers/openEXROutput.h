@@ -11,6 +11,7 @@
 #include <ImfArray.h>
 #include <half.h>
 #include <ImfRgbaFile.h>
+#include <ImfTiledOutputFile.h>
 
 namespace EXR = OPENEXR_IMF_NAMESPACE;
 using namespace IMATH_NAMESPACE;
@@ -120,6 +121,67 @@ void writeExr(const char fileName[], const float *rPixels, const float *gPixels,
     file.writePixels(height);
 }
 
+void writeTiledExr(const char fileName[], const float *rPixels, const float *gPixels,
+    const float *bPixels, const float *aPixels, int width, int height)
+{
+    // Define the tile size
+    const int tileWidth = 64;
+    const int tileHeight = 64;
+
+    // Create the header and specify tiled storage
+    EXR::Header header(width, height);
+    header.compression() = EXR::PIZ_COMPRESSION;
+    header.channels().insert("R", EXR::Channel(EXR::FLOAT));
+    header.channels().insert("G", EXR::Channel(EXR::FLOAT));
+    header.channels().insert("B", EXR::Channel(EXR::FLOAT));
+    header.channels().insert("A", EXR::Channel(EXR::FLOAT));
+    header.setTileDescription(EXR::TileDescription(
+        tileWidth, tileHeight,  // Tile dimensions
+        EXR::MIPMAP_LEVELS      // Tiling mode: EXR::ONE_LEVEL or EXR::MIPMAP_LEVELS
+    ));
+
+    // Use TiledOutputFile
+    EXR::TiledOutputFile file(fileName, header);
+
+    // Create and populate the frame buffer
+    EXR::FrameBuffer frameBuffer;
+
+    frameBuffer.insert("R",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)rPixels,                // base
+            sizeof(*rPixels) * 1,       // xStride
+            sizeof(*rPixels) * width)); // yStride
+
+    frameBuffer.insert("G",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)gPixels,                // base
+            sizeof(*gPixels) * 1,       // xStride
+            sizeof(*gPixels) * width)); // yStride
+
+    frameBuffer.insert("B",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)bPixels,                // base
+            sizeof(*bPixels) * 1,       // xStride
+            sizeof(*bPixels) * width)); // yStride
+
+    frameBuffer.insert("A",             // name
+        EXR::Slice(EXR::FLOAT,          // type
+        (char *)aPixels,                // base
+            sizeof(*aPixels) * 1,       // xStride
+            sizeof(*aPixels) * width)); // yStride
+
+    file.setFrameBuffer(frameBuffer);
+
+    // Write tiles
+    for (int y = 0; y < file.numYTiles(); ++y)
+    {
+        for (int x = 0; x < file.numXTiles(); ++x)
+        {
+            file.writeTile(x, y);
+        }
+    }
+}
+
 // writes floating single channel data point data to disk
 void writeSingleChannelExr(const char fileName[], const float *rPixels, int width, int height)
 {
@@ -131,7 +193,7 @@ void writeSingleChannelExr(const char fileName[], const float *rPixels, int widt
 
     EXR::FrameBuffer frameBuffer;
 
-    frameBuffer.insert("R",                     // name
+    frameBuffer.insert("R",         // name
         EXR::Slice(EXR::FLOAT,      // type
         (char *)rPixels,            // base
             sizeof(*rPixels) * 1,       // xStride
@@ -185,7 +247,7 @@ void oceanDataToEXR(aaOcean *&pOcean, const char *outputFolder, const char *post
     }
 
     genFullFilePath(&outputFileName[0], &outputFolder[0], &postfix[0], frame);
-    writeExr(&outputFileName[0], &rPixels[0][0], &gPixels[0][0], &bPixels[0][0], &aPixels[0][0], dimension, dimension);
+    writeTiledExr(&outputFileName[0], &rPixels[0][0], &gPixels[0][0], &bPixels[0][0], &aPixels[0][0], dimension, dimension);
 
     free(green);
     if (red)
