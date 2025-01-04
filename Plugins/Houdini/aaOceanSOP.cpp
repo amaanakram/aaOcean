@@ -17,9 +17,6 @@
 #include <SYS/SYS_Math.h>
 #include <UT/UT_DSOVersion.h>
 #include <UT/UT_Interrupt.h>
-#include <UT/UT_Matrix3.h>
-#include <UT/UT_Matrix4.h>
-#include <UT/UT_ThreadedAlgorithm.h>
 #include <GU/GU_Detail.h>
 #include <GU/GU_PrimPoly.h>
 #include <PRM/PRM_Include.h>
@@ -28,9 +25,6 @@
 #include <SOP/SOP_Guide.h>
 #include <UT/UT_Options.h>
 #include <GEO/GEO_AttributeHandle.h>
-#include <OP/OP_Operator.h>
-#include <OP/OP_OperatorTable.h>
-#include <PRM/PRM_Include.h>
 
 void newSopOperator(OP_OperatorTable *table)
 {
@@ -301,20 +295,25 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
         spectrumHandle = GA_RWHandleF(spectrumRef.getAttribute());
     }
     
-	//#pragma omp parallel for 
-    for (size_t pt_index = 0; pt_index < gdp->getNumPoints(); ++pt_index)
+    GA_Offset pt_offset;
+    GA_FOR_ALL_PTOFF(gdp, pt_offset)
     {
-        UT_Vector3F pos = gdp->getPos3(pt_index);
+        UT_Vector3F pos = gdp->getPos3(pt_offset);
         UT_Vector3F uv;
 
         if(isVertexContext)
         {
             // convert from Point to Vertex context
-            GA_Offset vtx_index = gdp->pointVertex(pt_index);   
+            GA_Offset vtx_index = gdp->pointVertex(pt_offset);   
+            if(vtx_index == GA_INVALID_OFFSET)
+            {
+                std::cout << "invalid vtx_index. skipping point transfromation for pt index " << pt_offset << "\n";
+                continue;
+            }
             uv = UVHandle.get(vtx_index);
         }
         else
-            uv = UVHandle.get(pt_index);
+            uv = UVHandle.get(pt_offset);
 
         const float u = uv.x();
         const float v = uv.y(); 
@@ -327,7 +326,7 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
             pos.z() += pOcean->getOceanData(u, v, aaOcean::eCHOPZ);
         }
         
-        gdp->setPos3(pt_index, pos); // not thread-safe
+        gdp->setPos3(pt_offset, pos); // not thread-safe
 
         if(enableEigens)
         {
@@ -342,14 +341,14 @@ OP_ERROR aaOceanSOP::cookMySop(OP_Context &context)
             eigenVectorMinusValue.y() = 0.0f;
             eigenVectorMinusValue.z() = pOcean->getOceanData(u, v, aaOcean::eEIGENMINUSZ);
 
-            eVecPlusHandle.set(pt_index, eigenVectorPlusValue);
-            eVecMinusHandle.set(pt_index, eigenVectorMinusValue);
+            eVecPlusHandle.set(pt_offset, eigenVectorPlusValue);
+            eVecMinusHandle.set(pt_offset, eigenVectorMinusValue);
 
             float eigenValue = pOcean->getOceanData(u, v, aaOcean::eFOAM);
-            eValuesHandle.set(pt_index,eigenValue);
+            eValuesHandle.set(pt_offset,eigenValue);
 
             float spectrumValue = pOcean->getOceanData(u, v, aaOcean::eSPECTRUM);
-            spectrumHandle.set(pt_index, spectrumValue);
+            spectrumHandle.set(pt_offset, spectrumValue);
         }
     }
     unlockInputs();
