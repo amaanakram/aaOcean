@@ -1,0 +1,13 @@
+[node aaOceanNoise]
+
+[attr seed]
+min INT 1
+max INT 15
+
+[attr octaves]
+min INT 3
+softmax INT 6
+
+[attr frequency]
+min FLOAT 0.01
+softmax FLOAT 50.0
