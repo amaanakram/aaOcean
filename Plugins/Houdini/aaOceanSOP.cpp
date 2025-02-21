@@ -92,7 +92,7 @@ static PRM_Name names[] =
 static PRM_Range        resolutionRange(PRM_RANGE_RESTRICTED, 1, PRM_RANGE_RESTRICTED, 8);
 static PRM_Default      resolutionDefault(4);
 
-static PRM_Range        oceanScaleRange(PRM_RANGE_RESTRICTED, 0.0, PRM_RANGE_UI, 200.0);
+static PRM_Range        oceanScaleRange(PRM_RANGE_RESTRICTED, 0.001, PRM_RANGE_RESTRICTED, 2048.0);
 static PRM_Default      oceanScaleDefault(100.0);
 
 static PRM_Range        oceanDepthRange(PRM_RANGE_RESTRICTED, 1.0, PRM_RANGE_RESTRICTED, 10000.0);
