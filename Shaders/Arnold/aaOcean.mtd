@@ -20,7 +20,7 @@ linkable BOOL true
 [attr spectrum]
 houdini.type STRING "menu:single:menu"
 default STRING "Philips"
-houdini.menu STRING "Philips;Philips;Pierson-Morkowitz;Pierson-Morkowitz;TMA;TMA;JONSWAP;JONSWAP"
+houdini.menu STRING "Philips;Philips;Pierson-Morkowitz;Pierson-Morkowitz;TMA;TMA"
 linkable BOOL true
 
 [attr oceanScale]

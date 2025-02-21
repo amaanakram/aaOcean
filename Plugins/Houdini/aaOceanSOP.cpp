@@ -42,7 +42,7 @@ static PRM_Name spectrumNames[] =
     PRM_Name("Philips",  "Philips"),
     PRM_Name("Pierson-Morkowitz", "Pierson-Morkowitz"),
     PRM_Name("TMA",  "TMA"),
-    PRM_Name("JONSWAP",  "JONSWAP"),
+    //PRM_Name("JONSWAP",  "JONSWAP"),
     PRM_Name(0)
 };
 static PRM_ChoiceList spectrumNamesMenu(PRM_CHOICELIST_SINGLE, spectrumNames);
